@@ -15,6 +15,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.7.3")
+    implementation("io.minio:minio:8.5.10")
 
     testImplementation(project(":encore-web"))
     testImplementation("org.springframework.security:spring-security-test")
