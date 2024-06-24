@@ -42,6 +42,7 @@ import se.svt.oss.encore.service.callback.CallbackService
 import se.svt.oss.encore.service.localencode.LocalEncodeService
 import se.svt.oss.encore.service.mediaanalyzer.MediaAnalyzerService
 import se.svt.oss.encore.service.queue.QueueService
+import se.svt.oss.encore.service.remotefiles.RemoteFileService
 import se.svt.oss.mediaanalyzer.file.MediaContainer
 import se.svt.oss.mediaanalyzer.file.MediaFile
 import java.io.File
@@ -60,6 +61,7 @@ class EncoreService(
     private val localEncodeService: LocalEncodeService,
     private val encoreProperties: EncoreProperties,
     private val queueService: QueueService,
+    private val remoteFileService: RemoteFileService
 ) {
 
     private val log = KotlinLogging.logger {}
@@ -225,7 +227,7 @@ class EncoreService(
             repository.save(encoreJob)
             cancelTopic?.removeListener(cancelListener)
             callbackService.sendProgressCallback(encoreJob)
-            localEncodeService.cleanup(outputFolder)
+            localEncodeService.cleanup(outputFolder, encoreJob)
         }
     }
 
@@ -268,6 +270,10 @@ class EncoreService(
     }
 
     private fun initJob(encoreJob: EncoreJob) {
+        encoreJob.inputs.forEach { input ->
+            input.accessUri = remoteFileService.getAccessUri(input.uri)
+        }
+
         encoreJob.inputs.forEach { input ->
             mediaAnalyzerService.analyzeInput(input)
         }
