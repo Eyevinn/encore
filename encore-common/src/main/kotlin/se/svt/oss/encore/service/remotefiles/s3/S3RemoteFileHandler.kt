@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Eyevinn Technology AB
+//
+// SPDX-License-Identifier: EUPL-1.2
+
 package se.svt.oss.encore.service.remotefiles.s3
 
 import se.svt.oss.encore.service.remotefiles.RemoteFileHandler
