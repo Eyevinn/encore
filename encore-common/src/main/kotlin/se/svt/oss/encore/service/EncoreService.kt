@@ -135,7 +135,8 @@ class EncoreService(
                             outWorkDir.resolve("$suffix.txt").appendText("file $it\n")
                         }
                 }
-                val outputFolder = File(encoreJob.outputFolder)
+
+                val outputFolder = File(localEncodeService.outputFolder(encoreJob))
                 outputFolder.mkdirs()
                 val outputFiles = suffixes.map {
                     val targetName = encoreJob.baseName + it
@@ -143,7 +144,7 @@ class EncoreService(
                     val targetFile = outputFolder.resolve(targetName)
                     ffmpegExecutor.joinSegments(encoreJob, outWorkDir.resolve("$it.txt"), targetFile)
                 }
-                outputFiles
+                localEncodeService.localEncodedFilesToCorrectDir(outputFolder.absolutePath, outputFiles, encoreJob)
             }
             updateSuccessfulJob(encoreJob, timedOutput)
         } catch (e: CancellationException) {
@@ -174,6 +175,9 @@ class EncoreService(
                     it.withSeekTo((it.seekTo ?: 0.0) + encoreJob.segmentLengthOrThrow() * segmentNumber)
                 }
             )
+            job.inputs.forEach { input ->
+                input.accessUri = remoteFileService.getAccessUri(input.uri)
+            }
             ffmpegExecutor.run(job, outputFolder, null)
             redissonClient.getTopic("segment-progress").publish(SegmentProgressEvent(encoreJob.id, segmentNumber, true))
             log.info { "Completed ${encoreJob.baseName} segment $segmentNumber/${encoreJob.numSegments()} " }
