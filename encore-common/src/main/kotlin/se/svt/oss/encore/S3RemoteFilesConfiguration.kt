@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import se.svt.oss.encore.service.remotefiles.s3.S3Properties
 import se.svt.oss.encore.service.remotefiles.s3.S3RemoteFileHandler
+import se.svt.oss.encore.service.remotefiles.s3.S3UriConverter
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Configuration
@@ -35,6 +38,13 @@ class S3RemoteFilesConfiguration {
                 .pathStyleAccessEnabled(true)
                 .build()
         )
+        .credentialsProvider(
+            if (s3Properties.anonymousAccess) {
+                AnonymousCredentialsProvider.create()
+            } else {
+                DefaultCredentialsProvider.create()
+            }
+        )
         .apply {
             if (!s3Properties.endpoint.isNullOrBlank()) {
                 endpointOverride(URI.create(s3Properties.endpoint))
@@ -58,6 +68,9 @@ class S3RemoteFilesConfiguration {
         .build()
 
     @Bean
-    fun s3RemoteFileHandler(s3Client: S3AsyncClient, s3Presigner: S3Presigner, s3Properties: S3Properties) =
-        S3RemoteFileHandler(s3Client, s3Presigner, s3Properties)
+    fun s3UriConverter(s3Properties: S3Properties, s3Region: Region) = S3UriConverter(s3Properties, s3Region)
+
+    @Bean
+    fun s3RemoteFileHandler(s3Client: S3AsyncClient, s3Presigner: S3Presigner, s3Properties: S3Properties, s3UriConverter: S3UriConverter) =
+        S3RemoteFileHandler(s3Client, s3Presigner, s3Properties, s3UriConverter)
 }

@@ -17,7 +17,8 @@ import java.util.concurrent.TimeUnit
 class S3RemoteFileHandler(
     private val client: S3AsyncClient,
     private val presigner: S3Presigner,
-    private val s3Properties: S3Properties
+    private val s3Properties: S3Properties,
+    private val s3UriConverter: S3UriConverter
 ) : RemoteFileHandler {
 
     private val log = mu.KotlinLogging.logger {}
@@ -25,9 +26,18 @@ class S3RemoteFileHandler(
     override fun getAccessUri(uri: String): String {
         val s3Uri = URI.create(uri)
 
+        if (s3Properties.anonymousAccess) {
+            return s3UriConverter.toHttp(s3Uri)
+        }
+        return presignUrl(s3Uri)
+    }
+
+    private fun presignUrl(s3Uri: URI): String {
+        val (bucket, key) = s3UriConverter.getBucketAndKey(s3Uri)
+
         val objectRequest: GetObjectRequest = GetObjectRequest.builder()
-            .bucket(s3Uri.host)
-            .key(s3Uri.path.stripLeadingSlash())
+            .bucket(bucket)
+            .key(key)
             .build()
         val presignRequest: GetObjectPresignRequest = GetObjectPresignRequest.builder()
             .signatureDuration(java.time.Duration.ofSeconds(s3Properties.presignDurationSeconds))
@@ -42,17 +52,14 @@ class S3RemoteFileHandler(
     override fun upload(localFile: String, remoteFile: String) {
         log.info { "Uploading $localFile to $remoteFile" }
         val s3Uri = URI.create(remoteFile)
-        val bucket = s3Uri.host
-        val objectName = s3Uri.path.stripLeadingSlash()
+        val (bucket, key) = s3UriConverter.getBucketAndKey(s3Uri)
         val putObjectRequest: PutObjectRequest = PutObjectRequest.builder()
             .bucket(bucket)
-            .key(objectName)
+            .key(key)
             .build()
         val res = client.putObject(putObjectRequest, Paths.get(localFile)).get(s3Properties.presignDurationSeconds, TimeUnit.SECONDS)
         log.info { "Upload result: $res" }
     }
-
-    private fun String.stripLeadingSlash() = if (startsWith("/")) substring(1) else this
 
     override val protocols = listOf("s3")
 }

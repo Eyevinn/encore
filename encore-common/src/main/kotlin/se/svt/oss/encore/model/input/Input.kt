@@ -8,14 +8,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.PositiveOrZero
 import se.svt.oss.encore.model.mediafile.toParams
 import se.svt.oss.encore.model.profile.ChannelLayout
 import se.svt.oss.mediaanalyzer.file.FractionString
 import se.svt.oss.mediaanalyzer.file.MediaContainer
 import se.svt.oss.mediaanalyzer.file.MediaFile
 import se.svt.oss.mediaanalyzer.file.VideoFile
-import jakarta.validation.constraints.Pattern
-import jakarta.validation.constraints.PositiveOrZero
 
 const val TYPE_AUDIO_VIDEO = "AudioVideo"
 const val TYPE_AUDIO = "Audio"
@@ -255,7 +255,7 @@ fun List<Input>.inputParams(readDuration: Double?): List<String> =
             (readDuration?.let { listOf("-t", "$it") } ?: emptyList()) +
             (input.seekTo?.let { listOf("-ss", "$it") } ?: emptyList()) +
             (if (input.copyTs) listOf("-copyts") else emptyList()) +
-            listOf("-i", input.accessUri ?: input.uri)
+            listOf("-i", input.accessUri)
     }
 
 fun List<Input>.maxDuration(): Double? = maxOfOrNull {

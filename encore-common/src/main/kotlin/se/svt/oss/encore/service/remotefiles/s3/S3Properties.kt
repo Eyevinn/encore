@@ -10,6 +10,7 @@ import java.time.Duration
 @ConfigurationProperties("remote-files.s3")
 data class S3Properties(
     val enabled: Boolean = false,
+    val anonymousAccess: Boolean = false,
     val endpoint: String = "",
     val presignDurationSeconds: Long = Duration.ofHours(12).seconds,
     val uploadTimeoutSeconds: Long = Duration.ofHours(1).seconds
