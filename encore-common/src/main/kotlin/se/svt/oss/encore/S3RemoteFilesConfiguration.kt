@@ -32,7 +32,7 @@ class S3RemoteFilesConfiguration {
     fun s3Client(s3Region: Region, s3Properties: S3Properties) = S3AsyncClient.builder()
         .region(s3Region)
         .crossRegionAccessEnabled(true)
-        .multipartEnabled(true)
+        .multipartEnabled(!s3Properties.anonymousAccess) // Multipart upload requires credentials
         .serviceConfiguration(
             S3Configuration.builder()
                 .pathStyleAccessEnabled(true)
@@ -71,6 +71,11 @@ class S3RemoteFilesConfiguration {
     fun s3UriConverter(s3Properties: S3Properties, s3Region: Region) = S3UriConverter(s3Properties, s3Region)
 
     @Bean
-    fun s3RemoteFileHandler(s3Client: S3AsyncClient, s3Presigner: S3Presigner, s3Properties: S3Properties, s3UriConverter: S3UriConverter) =
+    fun s3RemoteFileHandler(
+        s3Client: S3AsyncClient,
+        s3Presigner: S3Presigner,
+        s3Properties: S3Properties,
+        s3UriConverter: S3UriConverter
+    ) =
         S3RemoteFileHandler(s3Client, s3Presigner, s3Properties, s3UriConverter)
 }
