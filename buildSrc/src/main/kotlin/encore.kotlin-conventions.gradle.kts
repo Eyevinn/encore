@@ -1,3 +1,5 @@
+import org.jmailen.gradle.kotlinter.KotlinterExtension
+
 plugins {
     idea
     jacoco
@@ -29,13 +31,7 @@ tasks.lintKotlinTest {
 tasks.formatKotlinTest {
     source = (source - fileTree("src/test/generated-java")).asFileTree
 }
-kotlinter {
-    disabledRules = arrayOf(
-        "import-ordering",
-        "trailing-comma-on-declaration-site",
-        "trailing-comma-on-call-site"
-    )
-}
+
 assertjGenerator {
     classOrPackageNames = arrayOf(
         "se.svt.oss.encore.model",

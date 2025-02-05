@@ -110,9 +110,9 @@ class FfmpegExecutor(
                                 errorLines.add(line)
                                 throw RuntimeException(
                                     "Coding might not be compatible on all devices:\n${
-                                    errorLines.joinToString(
-                                        "\n"
-                                    )
+                                        errorLines.joinToString(
+                                            "\n"
+                                        )
                                     }"
                                 )
                             }

@@ -13,6 +13,17 @@ jacocoTestCoverageVerification {
                     '*.service.localencode.LocalEncodeService.moveFile*',
                     '*.S3Properties*.get*()',
                     '*RemoteFileService.DefaultHandler.*',
+                    '*.log$lambda$0()',
+                    'se.svt.oss.encore.service.remotefiles.RemoteFileService.getHandler$lambda$4(java.net.URI)',
+                    'se.svt.oss.encore.service.EncoreService.encodeSegmented$lambda$10(java.util.concurrent.CancellationException)',
+                    'se.svt.oss.encore.service.EncoreService.encodeSegmented$lambda$11(java.lang.Exception)',
+                    'se.svt.oss.encore.service.EncoreService.encodeSegment$lambda$16(int, java.lang.Exception)',
+                    'se.svt.oss.encore.service.FfmpegExecutor.runFfmpeg$lambda$17$lambda$16$lambda$14(java.lang.String)',
+                    'se.svt.oss.encore.service.EncoreService.handleProgress.1.1.emit$lambda$1()',
+                    'se.svt.oss.encore.service.queue.QueueService.poll$lambda$2()',
+                    'se.svt.oss.encore.service.queue.QueueService.poll$lambda$3()',
+                    'se.svt.oss.encore.service.queue.QueueService.handleOrphanedQueues$lambda$16(java.lang.Exception)',
+                    'se.svt.oss.encore.process.CommandBuilder.MapName.getEntries()'
             ]
             limit {
                 counter = 'LINE'

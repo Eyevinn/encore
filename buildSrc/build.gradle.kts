@@ -16,7 +16,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin")
     implementation("org.jetbrains.kotlin:kotlin-allopen")
     implementation("org.springframework.boot:spring-boot-gradle-plugin:3.1.3")
-    implementation("org.jmailen.gradle:kotlinter-gradle:3.13.0")
+    implementation("org.jmailen.gradle:kotlinter-gradle:4.1.1")
     implementation("pl.allegro.tech.build:axion-release-plugin:1.14.3")
     implementation("org.graalvm.buildtools:native-gradle-plugin:0.9.25")
     implementation("com.github.fhermansson:assertj-gradle-plugin:1.1.5")

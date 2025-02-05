@@ -72,11 +72,11 @@ class ProfileService(
 
     private val mapper =
         if (properties.location.filename?.let {
-            File(it).extension.lowercase(Locale.getDefault()) in setOf(
+                File(it).extension.lowercase(Locale.getDefault()) in setOf(
                     "yml",
                     "yaml"
                 )
-        } == true
+            } == true
         ) {
             yamlMapper()
         } else {
