@@ -8,14 +8,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.PositiveOrZero
 import se.svt.oss.encore.model.mediafile.toParams
 import se.svt.oss.encore.model.profile.ChannelLayout
 import se.svt.oss.mediaanalyzer.file.FractionString
 import se.svt.oss.mediaanalyzer.file.MediaContainer
 import se.svt.oss.mediaanalyzer.file.MediaFile
 import se.svt.oss.mediaanalyzer.file.VideoFile
-import jakarta.validation.constraints.Pattern
-import jakarta.validation.constraints.PositiveOrZero
 
 const val TYPE_AUDIO_VIDEO = "AudioVideo"
 const val TYPE_AUDIO = "Audio"
@@ -34,6 +34,8 @@ const val DEFAULT_AUDIO_LABEL = "main"
 sealed interface Input {
     @get:Schema(description = "URI of input file", required = true, example = "/path/to/file.mp4")
     val uri: String
+
+    var accessUri: String
 
     @get:Schema(description = "Input params required to properly decode input", example = """{ "ac": "2" }""")
     val params: LinkedHashMap<String, String?>
@@ -167,6 +169,9 @@ data class AudioInput(
     override val type: String
         get() = TYPE_AUDIO
 
+    @JsonIgnore
+    override var accessUri: String = uri
+
     override fun withSeekTo(seekTo: Double) = copy(seekTo = seekTo)
 
     val duration: Double
@@ -188,6 +193,9 @@ data class VideoInput(
     override val seekTo: Double? = null,
     override val copyTs: Boolean = false
 ) : VideoIn {
+    @JsonIgnore
+    override var accessUri: String = uri
+
     override val analyzedVideo: VideoFile
         @JsonIgnore
         get() = analyzed as? VideoFile ?: throw RuntimeException("Analyzed video for $uri is ${analyzed?.type}")
@@ -220,6 +228,9 @@ data class AudioVideoInput(
     override val seekTo: Double? = null,
     override val copyTs: Boolean = false
 ) : VideoIn, AudioIn {
+    @JsonIgnore
+    override var accessUri: String = uri
+
     override val analyzedVideo: VideoFile
         @JsonIgnore
         get() = analyzed as? VideoFile ?: throw RuntimeException("Analyzed audio/video for $uri is ${analyzed?.type}")
@@ -244,7 +255,7 @@ fun List<Input>.inputParams(readDuration: Double?): List<String> =
             (readDuration?.let { listOf("-t", "$it") } ?: emptyList()) +
             (input.seekTo?.let { listOf("-ss", "$it") } ?: emptyList()) +
             (if (input.copyTs) listOf("-copyts") else emptyList()) +
-            listOf("-i", input.uri)
+            listOf("-i", input.accessUri)
     }
 
 fun List<Input>.maxDuration(): Double? = maxOfOrNull {

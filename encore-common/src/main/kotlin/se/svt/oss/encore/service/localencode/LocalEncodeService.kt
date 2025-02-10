@@ -9,18 +9,21 @@ import org.springframework.stereotype.Service
 import se.svt.oss.encore.config.EncoreProperties
 import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.process.createTempDir
+import se.svt.oss.encore.service.remotefiles.RemoteFileService
 import se.svt.oss.mediaanalyzer.file.AudioFile
 import se.svt.oss.mediaanalyzer.file.ImageFile
 import se.svt.oss.mediaanalyzer.file.MediaFile
 import se.svt.oss.mediaanalyzer.file.VideoFile
 import java.io.File
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 @Service
 class LocalEncodeService(
-    private val encoreProperties: EncoreProperties
+    private val encoreProperties: EncoreProperties,
+    private val remoteFileService: RemoteFileService
 ) {
 
     private val log = KotlinLogging.logger {}
@@ -28,7 +31,7 @@ class LocalEncodeService(
     fun outputFolder(
         encoreJob: EncoreJob
     ): String {
-        return if (encoreProperties.localTemporaryEncode) {
+        return if (encoreProperties.localTemporaryEncode || remoteFileService.isRemoteFile(encoreJob.outputFolder)) {
             createTempDir("job_${encoreJob.id}").toString()
         } else {
             encoreJob.outputFolder
@@ -40,6 +43,23 @@ class LocalEncodeService(
         output: List<MediaFile>,
         encoreJob: EncoreJob
     ): List<MediaFile> {
+        if (remoteFileService.isRemoteFile(encoreJob.outputFolder)) {
+            log.debug { "Moving files to output destination ${encoreJob.outputFolder}, from local temp $outputFolder" }
+            File(outputFolder).listFiles()?.forEach { localFile ->
+                val remoteFile = URI.create(encoreJob.outputFolder).resolve(localFile.name).toString()
+                remoteFileService.upload(localFile.toString(), remoteFile)
+            }
+            val files = output.map {
+                val resolvedPath = URI.create(encoreJob.outputFolder).resolve(Path.of(it.file).fileName.toString()).toString()
+                when (it) {
+                    is VideoFile -> it.copy(file = resolvedPath)
+                    is AudioFile -> it.copy(file = resolvedPath)
+                    is ImageFile -> it.copy(file = resolvedPath)
+                    else -> throw Exception("Invalid conversion")
+                }
+            }
+            return files
+        }
         if (encoreProperties.localTemporaryEncode) {
             val destination = File(encoreJob.outputFolder)
             log.debug { "Moving files to correct outputFolder ${encoreJob.outputFolder}, from local temp $outputFolder" }
@@ -52,8 +72,10 @@ class LocalEncodeService(
         return output
     }
 
-    fun cleanup(tempDirectory: String?) {
-        if (tempDirectory != null && encoreProperties.localTemporaryEncode) {
+    fun cleanup(tempDirectory: String?, encoreJob: EncoreJob) {
+        if (tempDirectory != null &&
+            (encoreProperties.localTemporaryEncode || remoteFileService.isRemoteFile(encoreJob.outputFolder))
+        ) {
             File(tempDirectory).deleteRecursively()
         }
     }

@@ -219,7 +219,9 @@ class CommandBuilder(
     }
 
     private fun globalAudioFilters(input: AudioIn, analyzed: MediaContainer): List<String> {
-        return if (analyzed.audioLayout() == AudioLayout.MONO_STREAMS) {
+        return if (analyzed.audioLayout() == AudioLayout.MONO_STREAMS ||
+            analyzed.audioLayout() == AudioLayout.MIXED_MONO_MULTI
+        ) {
             val channelLayout = input.channelLayout(encodingProperties.defaultChannelLayouts)
             val map = channelLayout.channels.withIndex().joinToString("|") { "${it.index}.0-${it.value}" }
             listOf("join=inputs=${channelLayout.channels.size}:channel_layout=${channelLayout.layoutName}:map=$map")

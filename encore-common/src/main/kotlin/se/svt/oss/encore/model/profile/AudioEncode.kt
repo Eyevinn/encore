@@ -5,8 +5,8 @@
 package se.svt.oss.encore.model.profile
 
 import se.svt.oss.encore.config.EncodingProperties
-import se.svt.oss.encore.model.input.DEFAULT_AUDIO_LABEL
 import se.svt.oss.encore.model.EncoreJob
+import se.svt.oss.encore.model.input.DEFAULT_AUDIO_LABEL
 import se.svt.oss.encore.model.input.audioInput
 import se.svt.oss.encore.model.mediafile.AudioLayout
 import se.svt.oss.encore.model.mediafile.audioLayout
@@ -36,9 +36,6 @@ data class AudioEncode(
         val audioIn = job.inputs.audioInput(inputLabel)
             ?: return logOrThrow("Can not generate $outputName! No audio input with label '$inputLabel'.")
         val analyzed = audioIn.analyzedAudio
-        if (analyzed.audioLayout() == AudioLayout.INVALID) {
-            throw RuntimeException("Audio layout of audio input '$inputLabel' is not supported!")
-        }
         if (analyzed.audioLayout() == AudioLayout.NONE) {
             return logOrThrow("Can not generate $outputName! No audio streams in input!")
         }

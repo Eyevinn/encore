@@ -15,6 +15,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.7.3")
+    implementation(platform("software.amazon.awssdk:bom:2.29.2"))
+    implementation("software.amazon.awssdk:s3")
 
     testImplementation(project(":encore-web"))
     testImplementation("org.springframework.security:spring-security-test")
@@ -22,9 +24,11 @@ dependencies {
     testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:2.35.0")
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation("org.springframework.boot:spring-boot-starter-data-rest")
+
     testFixturesImplementation(platform("org.springframework.boot:spring-boot-dependencies:3.1.3"))
     testFixturesImplementation("com.redis:testcontainers-redis:2.2.0")
     testFixturesImplementation("io.github.microutils:kotlin-logging:3.0.5")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api")
+    testFixturesImplementation("org.testcontainers:localstack:1.20.3")
 }
 
