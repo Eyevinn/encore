@@ -55,7 +55,7 @@ private val log = KotlinLogging.logger {}
 )
 class MediaAnalyzerService(private val mediaAnalyzer: MediaAnalyzer) {
 
-    val ffprobeValidParams = getValidFfprobeParams();
+    val ffprobeValidParams = getValidFfprobeParams()
 
     fun analyzeInput(input: Input) {
         log.debug { "Analyzing input $input" }
@@ -94,8 +94,8 @@ fun getValidFfprobeParams(): Set<String> {
     val output = process.inputStream.bufferedReader().use { it.readText() }
     val exitCode = process.waitFor()
     if (exitCode != 0) {
-        log.error {"Failed to get valid ffprobe parameters, ffprobe failed with exit code: $exitCode"}
-        return emptySet();
+        log.error { "Failed to get valid ffprobe parameters, ffprobe failed with exit code: $exitCode" }
+        return emptySet()
     }
     val result = ConcurrentHashMap.newKeySet<String>()
     output.lines().filter { it.startsWith("  -") || it.startsWith("-") }
