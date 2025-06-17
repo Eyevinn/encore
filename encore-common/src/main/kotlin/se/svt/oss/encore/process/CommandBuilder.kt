@@ -145,7 +145,6 @@ class CommandBuilder(
                 log.debug { "No video outputs for video input ${input.videoLabel}" }
                 return@mapIndexedNotNull null
             }
-            // val split = "split=${splits.size}${splits.joinToString("")}"
             val split = splitFilter(splits)
             val analyzed = input.analyzedVideo
             val globalVideoFilters = globalVideoFilters(input, analyzed)
