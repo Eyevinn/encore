@@ -17,6 +17,7 @@ data class Profile(
 data class FilterSettings(
     val splitFilter: String = "split",
     val scaleFilter: String = "scale",
+    val scaleFilterParams: LinkedHashMap<String, String> = linkedMapOf(),
     val cropFilter: String = "crop",
     val padFilter: String = "pad",
 )

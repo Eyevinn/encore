@@ -84,10 +84,28 @@ interface VideoEncode : OutputProducer {
             scaleToHeight = width
         }
         if (scaleToWidth != null && scaleToHeight != null) {
-            videoFilters.add("${filterSettings.scaleFilter}=$scaleToWidth:$scaleToHeight:force_original_aspect_ratio=decrease:force_divisible_by=2")
+            val scaleParams = listOf(
+                "$scaleToWidth",
+                "$scaleToHeight",
+            ) + (
+                linkedMapOf<String, String>(
+                    "force_original_aspect_ratio" to "decrease",
+                    "force_divisible_by" to "2",
+                ) + filterSettings.scaleFilterParams
+                )
+                .map { "${it.key}=${it.value}" }
+            videoFilters.add(
+                "${filterSettings.scaleFilter}=${scaleParams.joinToString(":") }",
+            )
             videoFilters.add("setsar=1/1")
         } else if (scaleToWidth != null || scaleToHeight != null) {
-            videoFilters.add("${filterSettings.scaleFilter}=${scaleToWidth ?: -2}:${scaleToHeight ?: -2}")
+            val filterParams = listOf(
+                scaleToWidth?.toString() ?: "-2",
+                scaleToHeight?.toString() ?: "-2",
+            ) + filterSettings.scaleFilterParams.map { "${it.key}=${it.value}" }
+            videoFilters.add(
+                "${filterSettings.scaleFilter}=${filterParams.joinToString(":") }",
+            )
         }
         filters?.let { videoFilters.addAll(it) }
         if (debugOverlay) {
