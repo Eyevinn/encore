@@ -16,6 +16,7 @@ import se.svt.oss.encore.model.Status
 import se.svt.oss.encore.model.input.AudioInput
 import se.svt.oss.encore.model.input.VideoInput
 import se.svt.oss.encore.model.profile.ChannelLayout
+import se.svt.oss.mediaanalyzer.file.AudioFile
 import se.svt.oss.mediaanalyzer.file.ImageFile
 import se.svt.oss.mediaanalyzer.file.MediaContainer
 import se.svt.oss.mediaanalyzer.file.VideoFile
@@ -69,6 +70,41 @@ class EncoreIntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIn
             .hasDurationCloseTo(10.0, 0.1)
             .hasChannels(2)
             .hasSamplingRate(48000)
+    }
+
+    @Test
+    fun multipleAudioEncodedNormalAndSimple(@TempDir outputDir: File) {
+        val baseName = "audio_only"
+        val job = job(outputDir).copy(
+            baseName = baseName,
+            profile = "audio-only",
+            priority = 100,
+        )
+        val expectedOutPut = listOf("_STEREO", "_ALL").map  { outputDir.resolve("${baseName}${it}.mp4").absolutePath }
+        val createdJob = successfulTest(job, expectedOutPut)
+
+        assertThat(createdJob.output)
+            .hasSize(2)
+        assertThat(createdJob.output[0])
+            .isInstanceOf(AudioFile::class.java)
+        val audioStreams = (createdJob.output[0] as AudioFile).audioStreams
+        assertThat(audioStreams).hasSize(1)
+        assertThat(audioStreams[0])
+            .hasFormat("AAC")
+            .hasCodec("aac")
+            .hasDurationCloseTo(10.0, 0.1)
+            .hasChannels(2)
+            .hasSamplingRate(48000)
+        val audioStreams2 = (createdJob.output[1] as AudioFile).audioStreams
+        assertThat(audioStreams2).hasSize(1)
+        audioStreams2.forEach {
+            assertThat(it)
+                .hasFormat("AAC")
+                .hasCodec("aac")
+                .hasDurationCloseTo(10.0, 0.1)
+                .hasChannels(1)
+                .hasSamplingRate(48000)
+        }
     }
 
     @Test

@@ -118,14 +118,14 @@ class CommandBuilder(
     }
 
     private fun audioSelector(input: AudioIn, index: Int): String {
-        if (input.audioStream != null) {
-            return "[$index:a:${input.audioStream}]"
+        val channelLayout = input.channelLayout(encodingProperties.defaultChannelLayouts)
+        val streamIndexes = when {
+            input.audioStream != null -> listOf(input.audioStream)
+            input.analyzedAudio.audioLayout() == AudioLayout.MULTI_TRACK -> listOf(0)
+            else -> channelLayout.channels.indices
         }
-        val analyzedAudio = input.analyzedAudio
-        if (analyzedAudio.audioLayout() == AudioLayout.MULTI_TRACK) {
-            return "[$index:a:0]"
-        }
-        return "[$index:a]"
+
+        return streamIndexes.joinToString("") { "[$index:a:$it]" }
     }
 
     private fun AudioStreamEncode.usesInput(input: AudioIn) =

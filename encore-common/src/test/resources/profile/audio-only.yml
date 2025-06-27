@@ -1,0 +1,11 @@
+name: audio-only
+description: multiple audio streams
+encodes:
+  - type: AudioEncode
+    bitrate: 128k
+    channelLayout: 'stereo'
+    codec: aac
+    suffix: _STEREO
+  - type: SimpleAudioEncode
+    codec: aac
+    suffix: _ALL
