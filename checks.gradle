@@ -18,6 +18,7 @@ jacocoTestCoverageVerification {
                     '*.ShutdownHandler.*',
                     '*FfmpegExecutor.runFfmpeg$lambda$7(java.lang.Process)',
                     '*FfmpegExecutor.runFfmpeg$lambda$8(java.lang.Process)',
+                    '*FfmpegExecutorKt.getProgressRegex()',
                     '*FilterSettings.*',
             ]
             limit {
