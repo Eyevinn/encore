@@ -15,4 +15,5 @@ data class EncodingProperties(
     val flipWidthHeightIfPortrait: Boolean = true,
     val exitOnError: Boolean = true,
     val globalParams: LinkedHashMap<String, Any?> = linkedMapOf(),
+    val chunkedAudioEncoding: Boolean = true,
 )

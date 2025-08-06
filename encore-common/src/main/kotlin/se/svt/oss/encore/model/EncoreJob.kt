@@ -173,6 +173,13 @@ data class EncoreJob(
     @Positive
     val thumbnailTime: Double? = null,
 
+    @Schema(
+        description = "Enables/disables chunked encoding for audio. Ignored unless chunked encoding is enabled by setting 'segmentLength'",
+        example = "false",
+        nullable = true,
+    )
+    val chunkedAudioEncoding: Boolean? = null,
+
     @NotEmpty
     val inputs: List<Input> = emptyList(),
 ) {
