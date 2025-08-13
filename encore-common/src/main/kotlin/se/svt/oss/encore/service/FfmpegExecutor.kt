@@ -12,6 +12,7 @@ import se.svt.oss.encore.config.EncoreProperties
 import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.maxDuration
 import se.svt.oss.encore.model.mediafile.toParams
+import se.svt.oss.encore.model.output.Output
 import se.svt.oss.encore.process.CommandBuilder
 import se.svt.oss.encore.process.createTempDir
 import se.svt.oss.encore.service.profile.ProfileService
@@ -23,6 +24,12 @@ import kotlin.math.min
 import kotlin.math.round
 
 private val log = KotlinLogging.logger { }
+
+enum class EncodingMode {
+    AUDIO_AND_VIDEO,
+    VIDEO_ONLY,
+    AUDIO_ONLY,
+}
 
 @Service
 class FfmpegExecutor(
@@ -42,6 +49,7 @@ class FfmpegExecutor(
         encoreJob: EncoreJob,
         outputFolder: String,
         progressChannel: SendChannel<Int>?,
+        encodingMode: EncodingMode = EncodingMode.AUDIO_AND_VIDEO,
     ): List<MediaFile> {
         ShutdownHandler.checkShutdown()
         val profile = profileService.getProfile(encoreJob)
@@ -51,7 +59,7 @@ class FfmpegExecutor(
                 encoreProperties.encoding,
                 profile.filterSettings,
             )
-        }
+        }.mapNotNull { adaptOutputToEncodingMode(it, encodingMode) }
 
         check(outputs.distinctBy { it.id }.size == outputs.size) {
             "Profile ${encoreJob.profile} contains duplicate suffixes: ${outputs.map { it.id }}!"
@@ -76,6 +84,23 @@ class FfmpegExecutor(
         } finally {
             workDir.deleteRecursively()
         }
+    }
+
+    private fun adaptOutputToEncodingMode(output: Output, encodingMode: EncodingMode): Output? = when (encodingMode) {
+        EncodingMode.AUDIO_AND_VIDEO -> output
+        EncodingMode.VIDEO_ONLY ->
+            if (output.video == null) {
+                null
+            } else {
+                output.copy(audioStreams = emptyList())
+            }
+
+        EncodingMode.AUDIO_ONLY ->
+            if (output.audioStreams.isEmpty()) {
+                null
+            } else {
+                output.copy(video = null)
+            }
     }
 
     private fun runFfmpeg(
@@ -176,8 +201,15 @@ class FfmpegExecutor(
         null
     }
 
-    fun joinSegments(encoreJob: EncoreJob, segmentList: File, targetFile: File): MediaFile {
+    fun joinSegments(encoreJob: EncoreJob, segmentList: File, targetFile: File, audioFile: File?): MediaFile {
         val joinParams = profileService.getProfile(encoreJob).joinSegmentParams.toParams()
+        val inputArgs = mutableListOf("-i", "$segmentList")
+        val mapArgs = mutableListOf("-map", "0")
+        if (audioFile != null) {
+            inputArgs.addAll(listOf("-i", audioFile.absolutePath))
+            mapArgs.addAll(listOf("-map", "1"))
+        }
+
         val command = listOf(
             "ffmpeg",
             "-hide_banner",
@@ -188,10 +220,8 @@ class FfmpegExecutor(
             "concat",
             "-safe",
             "0",
-            "-i",
-            "$segmentList",
-            "-map",
-            "0",
+            *inputArgs.toTypedArray(),
+            *mapArgs.toTypedArray(),
             "-ignore_unknown",
             "-c",
             "copy",

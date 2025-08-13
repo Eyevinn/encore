@@ -21,6 +21,35 @@ import se.svt.oss.mediaanalyzer.file.MediaFile
 import java.time.OffsetDateTime
 import java.util.UUID
 
+data class SegmentedEncodingInfo(
+    @Schema(
+        description = "Length of each segment in seconds. Should be a multiple of target GOP.",
+        example = "19.2",
+        readOnly = true,
+        nullable = false,
+    )
+    val segmentLength: Double,
+    @Schema(
+        description = "Number of segments",
+        nullable = false,
+        readOnly = true,
+    )
+    val numSegments: Int,
+    @Schema(
+        description = "Number of encoding tasks used for this job. This is either the number of segments, or the number of segments + 1 if separate audio encode is used.",
+        nullable = false,
+        readOnly = true,
+    )
+    val numTasks: Int,
+    @Schema(
+        description = "Indicates if audio is encoded in segments. Otherwise a separate task will be used to encode the full audio.",
+        example = "true",
+        nullable = false,
+        readOnly = true,
+    )
+    val segmentedAudioEncode: Boolean,
+)
+
 @Validated
 @RedisHash("encore-jobs", timeToLive = (60 * 60 * 24 * 7).toLong()) // 1 week ttl
 @Tag(name = "encorejob")
@@ -100,12 +129,27 @@ data class EncoreJob(
     val priority: Int = 0,
 
     @Schema(
-        description = "Transcode segments of specified length in seconds in parallell. Should be a multiple of target GOP.",
+        description = "Transcode segments of specified length in seconds in parallell. Should be a multiple of target GOP. DEPRECATED: Use segmentedEncoding.segmentLength instead.",
         example = "19.2",
         nullable = true,
     )
     @Positive
     val segmentLength: Double? = null,
+
+    @Schema(
+        description = "If true, and segmented encoding i used, audio will be encoded in segments.",
+        example = "true",
+        defaultValue = "true",
+        nullable = true,
+    )
+    val useSegmentedAudioEncode: Boolean? = null,
+
+    @Schema(
+        description = "Properties for segmented encoding, or null if not used",
+        nullable = true,
+        readOnly = true,
+    )
+    var segmentedEncodingInfo: SegmentedEncodingInfo? = null,
 
     @Schema(
         description = "The exception message, if the EncoreJob failed",
@@ -172,13 +216,6 @@ data class EncoreJob(
     )
     @Positive
     val thumbnailTime: Double? = null,
-
-    @Schema(
-        description = "Enables/disables chunked encoding for audio. Ignored unless chunked encoding is enabled by setting 'segmentLength'",
-        example = "false",
-        nullable = true,
-    )
-    val chunkedAudioEncoding: Boolean? = null,
 
     @NotEmpty
     val inputs: List<Input> = emptyList(),

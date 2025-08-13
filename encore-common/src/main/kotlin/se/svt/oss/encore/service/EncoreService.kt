@@ -34,12 +34,14 @@ import se.svt.oss.encore.config.EncoreProperties
 import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.RedisEvent
 import se.svt.oss.encore.model.SegmentProgressEvent
+import se.svt.oss.encore.model.SegmentedEncodingInfo
 import se.svt.oss.encore.model.Status
 import se.svt.oss.encore.model.queue.QueueItem
 import se.svt.oss.encore.process.baseName
-import se.svt.oss.encore.process.numSegments
+import se.svt.oss.encore.process.numVideoSegments
 import se.svt.oss.encore.process.segmentDuration
 import se.svt.oss.encore.process.segmentLengthOrThrow
+import se.svt.oss.encore.process.segmentedEncodingInfoOrThrow
 import se.svt.oss.encore.repository.EncoreJobRepository
 import se.svt.oss.encore.service.callback.CallbackService
 import se.svt.oss.encore.service.localencode.LocalEncodeService
@@ -49,7 +51,9 @@ import se.svt.oss.encore.service.remotefiles.RemoteFileService
 import se.svt.oss.mediaanalyzer.file.MediaContainer
 import se.svt.oss.mediaanalyzer.file.MediaFile
 import java.io.File
+import java.nio.file.Paths
 import java.util.Locale
+import kotlin.io.path.isDirectory
 import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
@@ -94,16 +98,25 @@ class EncoreService(
         var progressListener: SegmentProgressListener? = null
         try {
             initJob(encoreJob)
-            val numSegments = encoreJob.numSegments()
+
+            val segmentedEncodingInfo = encoreJob.segmentedEncodingInfoOrThrow()
+
+            val separateAudioEncode = !segmentedEncodingInfo.segmentedAudioEncode
+            val numSegments = segmentedEncodingInfo.numSegments
+            val numTasks = segmentedEncodingInfo.numTasks
+
             log.debug { "Encoding using $numSegments segments" }
+            if (separateAudioEncode) {
+                log.debug { "Encoding audio separately" }
+            }
             redisMessageListerenerContainer.addMessageListener(cancelListener, ChannelTopic.of(cancelTopicName))
             val progressChannel = Channel<Int>()
             progressListener =
-                SegmentProgressListener(objectMapper, encoreJob.id, coroutineJob, numSegments, progressChannel)
+                SegmentProgressListener(objectMapper, encoreJob.id, coroutineJob, numTasks, progressChannel)
             redisMessageListerenerContainer.addMessageListener(progressListener, ChannelTopic.of("segment-progress"))
             val timedOutput = measureTimedValue {
                 sharedWorkDir(encoreJob).mkdirs()
-                repeat(numSegments) {
+                repeat(numTasks) {
                     queueService.enqueue(
                         QueueItem(
                             id = encoreJob.id.toString(),
@@ -119,7 +132,7 @@ class EncoreService(
                         progressChannel.trySendBlocking(0)
                         while (!progressListener.completed()) {
                             ShutdownHandler.checkShutdown()
-                            log.info { "Awaiting completion ${progressListener.completionCount()}/$numSegments..." }
+                            log.info { "Awaiting completion ${progressListener.completionCount()}/$numTasks..." }
                             delay(1000)
                         }
                     }
@@ -132,7 +145,9 @@ class EncoreService(
                 val suffixes = mutableSetOf<String>()
                 repeat(numSegments) { segmentNum ->
                     val segmentBaseName = encoreJob.baseName(segmentNum)
-                    outWorkDir.list()?.filter { it.startsWith(segmentBaseName) }
+                    outWorkDir.list()
+                        ?.filter { !Paths.get(it).isDirectory() }
+                        ?.filter { it.startsWith(segmentBaseName) }
                         ?.forEach {
                             val suffix = it.replaceFirst(segmentBaseName, "")
                             suffixes.add(suffix)
@@ -141,13 +156,34 @@ class EncoreService(
                 }
                 val outputFolder = File(encoreJob.outputFolder)
                 outputFolder.mkdirs()
+                val audioFilesMap: MutableMap<String, File> = if (separateAudioEncode) {
+                    sharedWorkDir(encoreJob).resolve("audio")
+                        .listFiles()
+                        ?.filter { it.isFile }
+                        ?.associateBy { it.name }
+                        ?.toMutableMap()
+                        ?: mutableMapOf()
+                } else {
+                    mutableMapOf()
+                }
                 val outputFiles = suffixes.map {
                     val targetName = encoreJob.baseName + it
                     log.info { "Joining segments for $targetName" }
                     val targetFile = outputFolder.resolve(targetName)
-                    ffmpegExecutor.joinSegments(encoreJob, outWorkDir.resolve("$it.txt"), targetFile)
+                    val audioFile = audioFilesMap.remove(targetName)
+                    ffmpegExecutor.joinSegments(encoreJob, outWorkDir.resolve("$it.txt"), targetFile, audioFile)
                 }
-                outputFiles
+                val audioOnlyOutputFiles = if (separateAudioEncode) {
+                    audioFilesMap.values.map {
+                        log.info { "Moving audio file ${it.name} to output folder" }
+                        val target = outputFolder.resolve(it.name)
+                        it.copyTo(target, overwrite = true)
+                        mediaAnalyzerService.analyze(target.absolutePath)
+                    }
+                } else {
+                    emptyList()
+                }
+                outputFiles + audioOnlyOutputFiles
             }
             updateSuccessfulJob(encoreJob, timedOutput)
         } catch (e: CancellationException) {
@@ -169,18 +205,25 @@ class EncoreService(
 
     private fun encodeSegment(encoreJob: EncoreJob, segmentNumber: Int) {
         try {
-            log.info { "Start encoding ${encoreJob.baseName} segment $segmentNumber/${encoreJob.numSegments()} " }
-            val outputFolder = sharedWorkDir(encoreJob).absolutePath
-            val job = encoreJob.copy(
-                baseName = encoreJob.baseName(segmentNumber),
-                duration = encoreJob.segmentDuration(segmentNumber),
-                inputs = encoreJob.inputs.map {
-                    it.withSeekTo((it.seekTo ?: 0.0) + encoreJob.segmentLengthOrThrow() * segmentNumber)
-                },
-            )
-            ffmpegExecutor.run(job, outputFolder, null)
+            log.info { "Start encoding ${encoreJob.baseName} segment $segmentNumber/${encoreJob.segmentedEncodingInfo?.numTasks} " }
+            val isAudioSegment = segmentNumber == encoreJob.numVideoSegments()
+            val (job, outputFolder, encodingMode) = if (isAudioSegment) {
+                Triple(encoreJob, sharedWorkDir(encoreJob).resolve("audio").absolutePath, EncodingMode.AUDIO_ONLY)
+            } else {
+                val separateAudioEncode = !(encoreJob.segmentedEncodingInfo?.segmentedAudioEncode ?: true)
+                val encodingMode = if (separateAudioEncode) EncodingMode.VIDEO_ONLY else EncodingMode.AUDIO_AND_VIDEO
+                val job = encoreJob.copy(
+                    baseName = encoreJob.baseName(segmentNumber),
+                    duration = encoreJob.segmentDuration(segmentNumber),
+                    inputs = encoreJob.inputs.map {
+                        it.withSeekTo((it.seekTo ?: 0.0) + encoreJob.segmentLengthOrThrow() * segmentNumber)
+                    },
+                )
+                Triple(job, sharedWorkDir(encoreJob).absolutePath, encodingMode)
+            }
+            ffmpegExecutor.run(job, outputFolder, null, encodingMode)
             redisTemplate.convertAndSend("segment-progress", SegmentProgressEvent(encoreJob.id, segmentNumber, true))
-            log.info { "Completed ${encoreJob.baseName} segment $segmentNumber/${encoreJob.numSegments()} " }
+            log.info { "Completed ${encoreJob.baseName} segment $segmentNumber/${encoreJob.segmentedEncodingInfo?.numTasks} " }
         } catch (e: ApplicationShutdownException) {
             throw e
         } catch (e: Exception) {
@@ -278,6 +321,18 @@ class EncoreService(
 
         encoreJob.inputs.forEach { input ->
             mediaAnalyzerService.analyzeInput(input)
+        }
+        if (encoreJob.segmentLength != null) {
+            val segmentedAudioEncode: Boolean = encoreJob.useSegmentedAudioEncode
+                ?: encoreProperties.encoding.segmentedEncoding.useForAudio
+            val numSegments = encoreJob.numVideoSegments()
+            val numTasks = numSegments + if (segmentedAudioEncode) 0 else 1
+            encoreJob.segmentedEncodingInfo = SegmentedEncodingInfo(
+                segmentLength = encoreJob.segmentLengthOrThrow(),
+                segmentedAudioEncode = segmentedAudioEncode,
+                numTasks = numTasks,
+                numSegments = numSegments,
+            )
         }
         log.info { "Start encoding" }
         encoreJob.status = Status.IN_PROGRESS

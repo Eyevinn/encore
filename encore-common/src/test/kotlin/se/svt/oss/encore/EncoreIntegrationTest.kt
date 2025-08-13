@@ -72,6 +72,39 @@ class EncoreIntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIn
     }
 
     @Test
+    fun multipleAudioStreamsOutputSegmentedEncodeSeparateAudio(@TempDir outputDir: File) {
+        val baseName = "multiple_audio"
+        val job = job(outputDir).copy(
+            baseName = baseName,
+            profile = "audio-streams",
+            segmentLength = 3.84,
+            priority = 100,
+            useSegmentedAudioEncode = false,
+        )
+        val expectedOutPut = listOf(outputDir.resolve("$baseName.mp4").absolutePath)
+        val createdJob = successfulTest(job, expectedOutPut)
+
+        assertThat(createdJob.output)
+            .hasSize(1)
+        assertThat(createdJob.output[0])
+            .isInstanceOf(VideoFile::class.java)
+        val audioStreams = (createdJob.output[0] as VideoFile).audioStreams
+        assertThat(audioStreams).hasSize(2)
+        assertThat(audioStreams[0])
+            .hasFormat("AC-3")
+            .hasCodec("ac3")
+            .hasDurationCloseTo(10.0, 0.1)
+            .hasChannels(6)
+            .hasSamplingRate(48000)
+        assertThat(audioStreams[1])
+            .hasFormat("AAC")
+            .hasCodec("aac")
+            .hasDurationCloseTo(10.0, 0.1)
+            .hasChannels(2)
+            .hasSamplingRate(48000)
+    }
+
+    @Test
     fun multipleInputsWithSeekAndDuration(@TempDir outputDir: File) {
         val baseName = "clip"
         val job = job(outputDir).copy(

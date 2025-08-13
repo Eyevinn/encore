@@ -7,6 +7,10 @@ package se.svt.oss.encore.config
 import org.springframework.boot.context.properties.NestedConfigurationProperty
 import se.svt.oss.encore.model.profile.ChannelLayout
 
+data class SegmentedEncodingProperties(
+    val useForAudio: Boolean = true,
+)
+
 data class EncodingProperties(
     @NestedConfigurationProperty
     val audioMixPresets: Map<String, AudioMixPreset> = mapOf("default" to AudioMixPreset()),
@@ -15,5 +19,6 @@ data class EncodingProperties(
     val flipWidthHeightIfPortrait: Boolean = true,
     val exitOnError: Boolean = true,
     val globalParams: LinkedHashMap<String, Any?> = linkedMapOf(),
-    val chunkedAudioEncoding: Boolean = true,
+    @NestedConfigurationProperty
+    val segmentedEncoding: SegmentedEncodingProperties = SegmentedEncodingProperties(),
 )
