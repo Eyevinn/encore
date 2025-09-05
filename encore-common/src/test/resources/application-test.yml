@@ -19,6 +19,9 @@ encore-settings:
   poll-delay: 1s
   shared-work-dir: ${java.io.tmpdir}/encore-shared
   encoding:
+    speech-to-text:
+      models:
+        default: ""
     audio-mix-preset-location: classpath:audiomixpreset/audio-mix-presets.yml
     default-channel-layouts:
       3: "3.0"

@@ -22,6 +22,7 @@ import se.svt.oss.encore.Assertions.assertThat
 import se.svt.oss.encore.model.Status
 import se.svt.oss.encore.model.callback.JobProgress
 import se.svt.oss.encore.model.input.AudioVideoInput
+import se.svt.oss.encore.model.profile.ChannelLayout
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import java.io.File
 import java.nio.file.Paths
@@ -68,7 +69,7 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
         val job = job(outputDir = outputDir, file = testFileSurround)
             .copy(
                 outputFolder = "s3://$outputBucket/output/",
-                inputs = listOf(AudioVideoInput(uri = remoteInput)),
+                inputs = listOf(AudioVideoInput(uri = remoteInput, channelLayout = ChannelLayout.CH_LAYOUT_5POINT1)),
             )
 
         val createdJob = createAndAwaitJob(
@@ -111,7 +112,7 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
         val job = job(outputDir = outputDir, file = testFileSurround)
             .copy(
                 outputFolder = "s3://$outputBucket/output/",
-                inputs = listOf(AudioVideoInput(uri = remoteInput)),
+                inputs = listOf(AudioVideoInput(uri = remoteInput, channelLayout = ChannelLayout.CH_LAYOUT_5POINT1)),
                 profile = "separate-video-audio",
                 segmentLength = 3.84,
                 priority = 100,

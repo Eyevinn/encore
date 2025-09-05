@@ -15,6 +15,7 @@ data class Output(
     val id: String,
     val isImage: Boolean = false,
     val decodeOutputStream: String? = null,
+    val sidechainOutput: Boolean = false,
 )
 
 fun interface PostProcessor {

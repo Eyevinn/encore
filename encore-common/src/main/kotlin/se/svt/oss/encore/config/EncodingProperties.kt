@@ -13,6 +13,10 @@ data class SegmentedEncodingProperties(
     val audioEncodingMode: AudioEncodingMode = AudioEncodingMode.ENCODE_WITH_VIDEO,
 )
 
+data class SpeechToTextProperties(
+    val models: Map<String, String> = emptyMap(),
+)
+
 data class EncodingProperties(
     val audioMixPresetLocation: Resource? = null,
     @NestedConfigurationProperty
@@ -24,4 +28,6 @@ data class EncodingProperties(
     val globalParams: LinkedHashMap<String, Any?> = linkedMapOf(),
     @NestedConfigurationProperty
     val segmentedEncoding: SegmentedEncodingProperties = SegmentedEncodingProperties(),
+    @NestedConfigurationProperty
+    val speechToText: SpeechToTextProperties = SpeechToTextProperties(),
 )

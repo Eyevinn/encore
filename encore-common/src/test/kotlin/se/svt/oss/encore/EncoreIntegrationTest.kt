@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo
 import com.github.tomakehurst.wiremock.junit5.WireMockTest
 import org.awaitility.Durations
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.core.io.ClassPathResource
 import org.springframework.test.context.ActiveProfiles
@@ -265,6 +266,15 @@ class EncoreIntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIn
             job(outputDir = outputDir, file = testFileStereo),
             defaultExpectedOutputFiles(outputDir, testFileStereo) +
                 listOf(expectedFile(outputDir, testFileStereo, "STEREO_DE.mp4")),
+        )
+    }
+
+    @EnabledIfEnvironmentVariable(named = "ENCORESETTINGS_ENCODING_SPEECHTOTEXT_MODELS_DEFAULT", matches = ".+")
+    @Test
+    fun jobIsSuccessfulSpeechToText(@TempDir outputDir: File) {
+        successfulTest(
+            job(outputDir = outputDir, file = testFileStereo).copy(profile = "speech-to-text"),
+            listOf(expectedFile(outputDir, testFileStereo, "subtitles.srt")),
         )
     }
 

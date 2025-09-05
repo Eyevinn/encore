@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import se.svt.oss.encore.Assertions.assertThat
 import se.svt.oss.encore.config.EncodingProperties
+import se.svt.oss.encore.config.SpeechToTextProperties
 import se.svt.oss.encore.defaultEncoreJob
 import se.svt.oss.encore.defaultVideoFile
 import se.svt.oss.encore.model.input.AudioInput
@@ -23,14 +24,22 @@ import se.svt.oss.encore.model.output.Output
 import se.svt.oss.encore.model.output.VideoStreamEncode
 import se.svt.oss.encore.model.profile.ChannelLayout
 import se.svt.oss.encore.model.profile.FilterSettings
+import se.svt.oss.encore.model.profile.OutputProducerContext
 import se.svt.oss.encore.model.profile.Profile
+import se.svt.oss.encore.model.profile.SpeechToText
 import se.svt.oss.mediaanalyzer.file.AudioFile
 
 internal class CommandBuilderTest {
     val profile: Profile = mockk()
-    var videoFile = defaultVideoFile
-    var encoreJob = defaultEncoreJob()
-    val encodingProperties = EncodingProperties()
+    private var videoFile = defaultVideoFile
+    private var encoreJob = defaultEncoreJob()
+    private val encodingProperties = EncodingProperties(
+        speechToText = SpeechToTextProperties(
+            models = mapOf("default" to "/models/ggml-medium.en.bin"),
+        ),
+    )
+
+    val outputFolder = "/some/folder"
 
     private lateinit var commandBuilder: CommandBuilder
 
@@ -270,7 +279,13 @@ internal class CommandBuilderTest {
             encodingProperties.copy(exitOnError = false, globalParams = linkedMapOf("err_detect" to "explode")),
         )
 
-        val buildCommands = commandBuilder.buildCommands(listOf(output(true), audioOutput("other", "extra"), thumbnailOutput("thumb", "0:v:0")))
+        val buildCommands = commandBuilder.buildCommands(
+            listOf(
+                output(true),
+                audioOutput("other", "extra"),
+                thumbnailOutput("thumb", "0:v:0"),
+            ),
+        )
 
         assertThat(buildCommands).hasSize(2)
 
@@ -278,7 +293,45 @@ internal class CommandBuilderTest {
         val secondPass = buildCommands[1].joinToString(" ")
 
         assertThat(firstPass).isEqualTo("ffmpeg -err_detect explode -hide_banner -loglevel +level -y -f mp4 -t 22.5 -i /input/test.mp4 -filter_complex sws_flags=scaling;[0:v:1]yadif,setdar=16/9,scale=iw*sar:ih,crop=min(iw\\,ih*1/1):min(ih\\,iw/(1/1)),pad=aspect=16/9:x=(ow-iw)/2:y=(oh-ih)/2,video,filter,split=1[VIDEO-main-test-out];[VIDEO-main-test-out]video-filter[VIDEO-test-out] -map [VIDEO-test-out] -ss 12.1 -an -t 10.4 first pass -f mp4 /dev/null")
-        assertThat(secondPass).isEqualTo("ffmpeg -err_detect explode -hide_banner -loglevel +level -y -f mp4 -t 22.5 -i /input/test.mp4 -ac 4 -t 22.5 -i /input/main-audio.mp4 -t 22.5 -i /input/other-audio.mp4 -filter_complex sws_flags=scaling;[0:v:1]yadif,setdar=16/9,scale=iw*sar:ih,crop=min(iw\\,ih*1/1):min(ih\\,iw/(1/1)),pad=aspect=16/9:x=(ow-iw)/2:y=(oh-ih)/2,video,filter,split=1[VIDEO-main-test-out];[VIDEO-main-test-out]video-filter[VIDEO-test-out];[1:a]join=inputs=4:channel_layout=4.0:map=0.0-FL|1.0-FR|2.0-FC|3.0-BC,audio-main,main-filter,asplit=1[AUDIO-main-test-out-0];[2:a:3]asplit=1[AUDIO-other-extra-0];[AUDIO-main-test-out-0]audio-filter[AUDIO-test-out-0];[AUDIO-other-extra-0]audio-filter-extra[AUDIO-extra-0] -map [VIDEO-test-out] -ss 12.1 -map [AUDIO-test-out-0] -ss 12.1 -t 10.4 video params audio params -metadata comment=Transcoded using Encore /tmp/123/out.mp4 -map [AUDIO-extra-0] -ss 12.1 -t 10.4 -vn audio extra -metadata comment=Transcoded using Encore /tmp/123/extra.mp4 -dec 0:v:0 -filter_complex [dec:0]thumb-filter[VIDEO-thumb] -map [VIDEO-thumb] thumb thumb -an -metadata comment=Transcoded using Encore /tmp/123/thumb.jpg")
+        assertThat(secondPass).isEqualTo(
+            "ffmpeg -err_detect explode -hide_banner -loglevel +level -y -f mp4 -t 22.5 -i /input/test.mp4 -ac 4 -t 22.5 -i /input/main-audio.mp4 -t 22.5 -i /input/other-audio.mp4 -filter_complex sws_flags=scaling;[0:v:1]yadif,setdar=16/9,scale=iw*sar:ih,crop=min(iw\\,ih*1/1):min(ih\\,iw/(1/1)),pad=aspect=16/9:x=(ow-iw)/2:y=(oh-ih)/2,video,filter,split=1[VIDEO-main-test-out];[VIDEO-main-test-out]video-filter[VIDEO-test-out];[1:a]join=inputs=4:channel_layout=4.0:map=0.0-FL|1.0-FR|2.0-FC|3.0-BC,audio-main,main-filter,asplit=1[AUDIO-main-test-out-0];[2:a:3]asplit=1[AUDIO-other-extra-0];[AUDIO-main-test-out-0]audio-filter[AUDIO-test-out-0];[AUDIO-other-extra-0]audio-filter-extra[AUDIO-extra-0] -map [VIDEO-test-out] -ss 12.1 -map [AUDIO-test-out-0] -ss 12.1 -t 10.4 video params audio params -metadata comment=Transcoded using Encore /tmp/123/out.mp4 -map [AUDIO-extra-0] -ss 12.1 -t 10.4 -vn audio extra -metadata comment=Transcoded using Encore /tmp/123/extra.mp4 -dec 0:v:0 -filter_complex [dec:0]thumb-filter[VIDEO-thumb] -map [VIDEO-thumb] thumb thumb -an -metadata comment=Transcoded using Encore /tmp/123/thumb.jpg",
+        )
+    }
+
+    @Test
+    fun `speech to text`() {
+        val profile = Profile(
+            name = "profile",
+            description = "",
+            encodes = listOf(
+                SpeechToText(),
+            ),
+        )
+        commandBuilder = CommandBuilder(
+            encoreJob.copy(
+                inputs = listOf(
+                    AudioVideoInput(
+                        uri = "/input/test.mp4",
+                        analyzed = defaultVideoFile.trimAudio(1),
+                    ),
+                ),
+            ),
+            profile,
+            encoreJob.outputFolder,
+            encodingProperties,
+        )
+
+        val output = profile.encodes[0].getOutput(
+            OutputProducerContext(
+                encoreJob,
+                encodingProperties,
+                FilterSettings(),
+                outputFolder,
+            ),
+        ) ?: throw RuntimeException("No output produced")
+        val commands = commandBuilder.buildCommands(listOf(output))
+        assertThat(commands).hasSize(1)
+        assertThat(commands[0].joinToString(" ")).isEqualTo("ffmpeg -xerror -hide_banner -loglevel +level -y -i /input/test.mp4 -filter_complex sws_flags=bicubic;[0:a:0]asplit=1[AUDIO-main-_stt.srt-0];[AUDIO-main-_stt.srt-0]whisper=model=/models/ggml-medium.en.bin:queue=3:language=auto:format=srt:destination=/some/folder/test_stt.srt[AUDIO-_stt.srt-0] -map [AUDIO-_stt.srt-0] -vn -an -metadata comment=Transcoded using Encore -f null -")
     }
 
     private fun output(twoPass: Boolean): Output {
