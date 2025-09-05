@@ -6,8 +6,6 @@ package se.svt.oss.encore.model.profile
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.math3.fraction.Fraction
-import se.svt.oss.encore.config.EncodingProperties
-import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.DEFAULT_VIDEO_LABEL
 import se.svt.oss.encore.model.input.analyzedVideo
 import se.svt.oss.encore.model.input.videoInput
@@ -33,10 +31,9 @@ data class ThumbnailMapEncode(
 ) : OutputProducer {
 
     override fun getOutput(
-        job: EncoreJob,
-        encodingProperties: EncodingProperties,
-        filterSettings: FilterSettings,
+        context: OutputProducerContext,
     ): Output? {
+        val job = context.job
         if (job.segmentLength != null) {
             return logOrThrow("Thumbnail map is not supported in segmented encode!")
         }

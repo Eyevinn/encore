@@ -13,6 +13,7 @@ import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.maxDuration
 import se.svt.oss.encore.model.mediafile.toParams
 import se.svt.oss.encore.model.output.Output
+import se.svt.oss.encore.model.profile.OutputProducerContext
 import se.svt.oss.encore.process.CommandBuilder
 import se.svt.oss.encore.process.createTempDir
 import se.svt.oss.encore.service.audiomix.AudioMixPresetService
@@ -72,9 +73,12 @@ class FfmpegExecutor(
             encoreProperties.encoding.copy(audioMixPresets = audioMixPresets)
         val outputs = profile.encodes.mapNotNull {
             it.getOutput(
-                encoreJob,
-                encodingProperties,
-                profile.filterSettings,
+                OutputProducerContext(
+                    encoreJob,
+                    encoreProperties.encoding,
+                    profile.filterSettings,
+                    outputFolder,
+                ),
             )
         }.mapNotNull { adaptOutputToEncodingMode(it, encodingMode) }
 

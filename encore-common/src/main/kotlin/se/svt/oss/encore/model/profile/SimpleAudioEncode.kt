@@ -4,8 +4,6 @@
 
 package se.svt.oss.encore.model.profile
 
-import se.svt.oss.encore.config.EncodingProperties
-import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.DEFAULT_AUDIO_LABEL
 import se.svt.oss.encore.model.input.analyzedAudio
 import se.svt.oss.encore.model.mediafile.toParams
@@ -23,10 +21,9 @@ data class SimpleAudioEncode(
     val inputLabel: String = DEFAULT_AUDIO_LABEL,
 ) : AudioEncoder() {
     override fun getOutput(
-        job: EncoreJob,
-        encodingProperties: EncodingProperties,
-        filterSettings: FilterSettings,
+        context: OutputProducerContext,
     ): Output? {
+        val job = context.job
         val outputName = "${job.baseName}$suffix.$format"
         job.inputs.analyzedAudio(inputLabel)
             ?: return logOrThrow("Can not generate $outputName! No audio input with label '$inputLabel'.")

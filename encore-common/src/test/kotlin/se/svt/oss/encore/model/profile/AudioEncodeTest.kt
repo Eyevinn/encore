@@ -11,6 +11,7 @@ import se.svt.oss.encore.config.AudioMixPreset
 import se.svt.oss.encore.config.EncodingProperties
 import se.svt.oss.encore.defaultEncoreJob
 import se.svt.oss.encore.defaultVideoFile
+import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.AudioVideoInput
 import se.svt.oss.encore.model.input.DEFAULT_AUDIO_LABEL
 import se.svt.oss.encore.model.output.AudioStreamEncode
@@ -30,7 +31,7 @@ class AudioEncodeTest {
     @Test
     fun `no audio streams throws exception`() {
         assertThatThrownBy {
-            audioEncode.getOutput(job(), EncodingProperties(), FilterSettings())
+            audioEncode.getOutput(outputProducerContext(job()))
         }.isInstanceOf(RuntimeException::class.java)
             .hasMessageContaining("No audio streams in input")
     }
@@ -38,9 +39,7 @@ class AudioEncodeTest {
     @Test
     fun `valid output`() {
         val output = audioEncode.getOutput(
-            job(getAudioStream(6)),
-            EncodingProperties(),
-            FilterSettings(),
+            outputProducerContext(job(getAudioStream(6))),
         )
         assertThat(output)
             .hasOutput("test_aac_stereo.mp4")
@@ -67,17 +66,18 @@ class AudioEncodeTest {
         )
 
         val output = audioEncodeLocal.getOutput(
-            job = job(getAudioStream(6)),
-            encodingProperties = EncodingProperties(
-                audioMixPresets = mapOf(
-                    "default" to AudioMixPreset(
-                        panMapping = mapOf(
-                            ChannelLayout.CH_LAYOUT_5POINT1 to mapOf(ChannelLayout.CH_LAYOUT_STEREO to "c0=c0|c1=c1"),
+            outputProducerContext(
+                job(getAudioStream(6)),
+                encodingProperties = EncodingProperties(
+                    audioMixPresets = mapOf(
+                        "default" to AudioMixPreset(
+                            panMapping = mapOf(
+                                ChannelLayout.CH_LAYOUT_5POINT1 to mapOf(ChannelLayout.CH_LAYOUT_STEREO to "c0=c0|c1=c1"),
+                            ),
                         ),
                     ),
                 ),
             ),
-            FilterSettings(),
         )
         assertThat(output)
             .hasOutput("test_aac_stereo.mp4")
@@ -112,15 +112,16 @@ class AudioEncodeTest {
         )
 
         val output = audioEncodeLocal.getOutput(
-            job = job(getAudioStream(6)),
-            encodingProperties = EncodingProperties(
-                audioMixPresets = mapOf(
-                    "de" to AudioMixPreset(
-                        fallbackToAuto = false,
+            outputProducerContext(
+                job(getAudioStream(6)),
+                EncodingProperties(
+                    audioMixPresets = mapOf(
+                        "de" to AudioMixPreset(
+                            fallbackToAuto = false,
+                        ),
                     ),
                 ),
             ),
-            FilterSettings(),
         )
         assertThat(output).isNull()
     }
@@ -133,15 +134,16 @@ class AudioEncodeTest {
 
         assertThatThrownBy {
             audioEncodeLocal.getOutput(
-                job(getAudioStream(6)),
-                encodingProperties = EncodingProperties(
-                    audioMixPresets = mapOf(
-                        "de" to AudioMixPreset(
-                            fallbackToAuto = false,
+                outputProducerContext(
+                    job(getAudioStream(6)),
+                    encodingProperties = EncodingProperties(
+                        audioMixPresets = mapOf(
+                            "de" to AudioMixPreset(
+                                fallbackToAuto = false,
+                            ),
                         ),
                     ),
                 ),
-                FilterSettings(),
             )
         }.isInstanceOf(RuntimeException::class.java)
             .hasMessageContaining("No audio mix preset for 'de': 5.1 -> stereo")
@@ -150,7 +152,7 @@ class AudioEncodeTest {
     @Test
     fun `unmapped input optional returns null`() {
         val audioEncodeLocal = audioEncode.copy(inputLabel = "other", optional = true)
-        val output = audioEncodeLocal.getOutput(job(getAudioStream(6)), EncodingProperties(), FilterSettings())
+        val output = audioEncodeLocal.getOutput(outputProducerContext(job(getAudioStream(6))))
         assertThat(output).isNull()
     }
 
@@ -158,10 +160,21 @@ class AudioEncodeTest {
     fun `unmapped input not optional throws`() {
         val audioEncodeLocal = audioEncode.copy(inputLabel = "other")
         assertThatThrownBy {
-            audioEncodeLocal.getOutput(job(getAudioStream(6)), EncodingProperties(), FilterSettings())
+            audioEncodeLocal.getOutput(outputProducerContext(job(getAudioStream(6))))
         }.isInstanceOf(RuntimeException::class.java)
             .hasMessage("Can not generate test_aac_stereo.mp4! No audio input with label 'other'.")
     }
+
+    private fun outputProducerContext(
+        job: EncoreJob = job(),
+        encodingProperties: EncodingProperties = EncodingProperties(),
+    ) =
+        OutputProducerContext(
+            job = job,
+            encodingProperties = encodingProperties,
+            filterSettings = FilterSettings(),
+            outputFolder = "",
+        )
 
     private fun job(vararg audioStreams: AudioStream) =
         defaultEncoreJob().copy(

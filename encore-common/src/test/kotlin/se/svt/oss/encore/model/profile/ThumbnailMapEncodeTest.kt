@@ -9,6 +9,7 @@ import se.svt.oss.encore.Assertions.assertThat
 import se.svt.oss.encore.Assertions.assertThatThrownBy
 import se.svt.oss.encore.config.EncodingProperties
 import se.svt.oss.encore.defaultEncoreJob
+import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.DEFAULT_VIDEO_LABEL
 import se.svt.oss.encore.model.output.VideoStreamEncode
 
@@ -23,7 +24,7 @@ class ThumbnailMapEncodeTest {
 
     @Test
     fun `correct output`() {
-        val output = encode.getOutput(defaultEncoreJob(), EncodingProperties(), FilterSettings())
+        val output = encode.getOutput(outputProducerContext())
         assertThat(output)
             .hasNoAudioStreams()
             .hasId("_12x20_160x90_thumbnail_map.jpg")
@@ -41,10 +42,10 @@ class ThumbnailMapEncodeTest {
     fun `correct output seekTo and duration`() {
         val output = ThumbnailMapEncode(cols = 6, rows = 10)
             .getOutput(
-                defaultEncoreJob()
-                    .copy(seekTo = 1.0, duration = 5.0),
-                EncodingProperties(),
-                FilterSettings(),
+                outputProducerContext(
+                    defaultEncoreJob()
+                        .copy(seekTo = 1.0, duration = 5.0),
+                ),
             )
         assertThat(output)
             .hasNoAudioStreams()
@@ -62,9 +63,9 @@ class ThumbnailMapEncodeTest {
     @Test
     fun `unmapped input optional returns null`() {
         val output = encode.copy(inputLabel = "other", optional = true).getOutput(
-            job = defaultEncoreJob(),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
+            outputProducerContext(
+                defaultEncoreJob(),
+            ),
         )
         assertThat(output).isNull()
     }
@@ -73,11 +74,21 @@ class ThumbnailMapEncodeTest {
     fun `unmapped input not optional throws`() {
         assertThatThrownBy {
             encode.copy(inputLabel = "other", optional = false).getOutput(
-                job = defaultEncoreJob(),
-                encodingProperties = EncodingProperties(),
-                FilterSettings(),
+                outputProducerContext(
+                    defaultEncoreJob(),
+                ),
             )
         }.isInstanceOf(RuntimeException::class.java)
             .hasMessageContaining("No input with label other!")
     }
+
+    private fun outputProducerContext(
+        job: EncoreJob = defaultEncoreJob(),
+    ) =
+        OutputProducerContext(
+            job = job,
+            encodingProperties = EncodingProperties(),
+            filterSettings = FilterSettings(),
+            outputFolder = "",
+        )
 }

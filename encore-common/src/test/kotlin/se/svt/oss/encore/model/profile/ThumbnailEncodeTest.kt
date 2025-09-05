@@ -10,6 +10,7 @@ import se.svt.oss.encore.Assertions.assertThatThrownBy
 import se.svt.oss.encore.config.EncodingProperties
 import se.svt.oss.encore.defaultEncoreJob
 import se.svt.oss.encore.longVideoFile
+import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.AudioVideoInput
 import se.svt.oss.encore.model.input.DEFAULT_VIDEO_LABEL
 import se.svt.oss.encore.model.output.VideoStreamEncode
@@ -25,9 +26,9 @@ class ThumbnailEncodeTest {
     @Test
     fun `use percentages for filter`() {
         val output = encode.getOutput(
-            job = defaultEncoreJob(),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
+            outputProducerContext(
+                defaultEncoreJob(),
+            ),
         )
         assertThat(output)
             .hasOutput("test_thumb%02d.jpg")
@@ -45,11 +46,11 @@ class ThumbnailEncodeTest {
     @Test
     fun `use thumbnail time`() {
         val output = encode.getOutput(
-            job = defaultEncoreJob().copy(
-                thumbnailTime = 5.0,
+            outputProducerContext(
+                defaultEncoreJob().copy(
+                    thumbnailTime = 5.0,
+                ),
             ),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
         )
         assertThat(output)
             .hasOutput("test_thumb%02d.jpg")
@@ -71,9 +72,9 @@ class ThumbnailEncodeTest {
             suffixZeroPad = 4,
         )
         val output = selectorEncode.getOutput(
-            job = defaultEncoreJob(),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
+            outputProducerContext(
+                defaultEncoreJob(),
+            ),
         )
 
         assertThat(output)
@@ -92,12 +93,12 @@ class ThumbnailEncodeTest {
     @Test
     fun `seekTo and duration set`() {
         val output = encode.getOutput(
-            job = defaultEncoreJob().copy(
-                seekTo = 1.0,
-                duration = 4.0,
+            outputProducerContext(
+                defaultEncoreJob().copy(
+                    seekTo = 1.0,
+                    duration = 4.0,
+                ),
             ),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
         )
         assertThat(output)
             .hasOutput("test_thumb%02d.jpg")
@@ -115,20 +116,20 @@ class ThumbnailEncodeTest {
     @Test
     fun `inputSeekTo and duration set`() {
         val output = encode.getOutput(
-            job = defaultEncoreJob().copy(
-                seekTo = 10.0,
-                thumbnailTime = 1351.0,
-                duration = 600.0,
-                inputs = listOf(
-                    AudioVideoInput(
-                        uri = "/input/test.mp4",
-                        analyzed = longVideoFile,
-                        seekTo = 1190.0,
+            outputProducerContext(
+                defaultEncoreJob().copy(
+                    seekTo = 10.0,
+                    thumbnailTime = 1351.0,
+                    duration = 600.0,
+                    inputs = listOf(
+                        AudioVideoInput(
+                            uri = "/input/test.mp4",
+                            analyzed = longVideoFile,
+                            seekTo = 1190.0,
+                        ),
                     ),
                 ),
             ),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
         )
         assertThat(output)
             .hasOutput("test_thumb%02d.jpg")
@@ -146,9 +147,9 @@ class ThumbnailEncodeTest {
     @Test
     fun `unmapped input optional returns null`() {
         val output = encode.copy(inputLabel = "other", optional = true).getOutput(
-            job = defaultEncoreJob(),
-            encodingProperties = EncodingProperties(),
-            FilterSettings(),
+            outputProducerContext(
+                defaultEncoreJob(),
+            ),
         )
         assertThat(output).isNull()
     }
@@ -157,11 +158,22 @@ class ThumbnailEncodeTest {
     fun `unmapped input not optional throws`() {
         assertThatThrownBy {
             encode.copy(inputLabel = "other", optional = false).getOutput(
-                job = defaultEncoreJob(),
-                encodingProperties = EncodingProperties(),
-                FilterSettings(),
+                outputProducerContext(
+                    defaultEncoreJob(),
+                ),
             )
         }.isInstanceOf(RuntimeException::class.java)
             .hasMessageContaining("No video input with label other!")
     }
+
+    private fun outputProducerContext(
+        job: EncoreJob,
+        encodingProperties: EncodingProperties = EncodingProperties(),
+    ) =
+        OutputProducerContext(
+            job = job,
+            encodingProperties = encodingProperties,
+            filterSettings = FilterSettings(),
+            outputFolder = "",
+        )
 }

@@ -287,12 +287,16 @@ class CommandBuilder(
         }.ifEmpty { listOf("-an") }
 
         val metaDataParams = listOf("-metadata", "comment=Transcoded using Encore")
-
+        val outputFile = if (output.sidechainOutput) {
+            listOf("-f", "null", "-")
+        } else {
+            listOf(File(outputFolder).resolve(output.output).toString())
+        }
         return maps +
             durationParams +
             videoParams + audioParams +
             metaDataParams +
-            File(outputFolder).resolve(output.output).toString()
+            outputFile
     }
 
     private fun seekParams(): List<String> {

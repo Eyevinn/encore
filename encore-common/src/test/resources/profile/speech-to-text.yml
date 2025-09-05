@@ -1,0 +1,5 @@
+name: speech-to-text
+description: speech-to-text
+scaling: bicubic
+encodes:
+  - type: SpeechToText

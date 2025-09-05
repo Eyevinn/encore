@@ -6,7 +6,6 @@ package se.svt.oss.encore.model.profile
 
 import org.apache.commons.math3.fraction.Fraction
 import se.svt.oss.encore.config.EncodingProperties
-import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.VideoIn
 import se.svt.oss.encore.model.input.videoInput
 import se.svt.oss.encore.model.mediafile.toParams
@@ -28,9 +27,10 @@ interface VideoEncode : OutputProducer {
     val codec: String
     val inputLabel: String
 
-    override fun getOutput(job: EncoreJob, encodingProperties: EncodingProperties, filterSettings: FilterSettings): Output? {
+    override fun getOutput(context: OutputProducerContext): Output? {
+        val (job, encodingProperties, filterSettings) = context
         val audioEncodesToUse = audioEncodes.ifEmpty { listOfNotNull(audioEncode) }
-        val audio = audioEncodesToUse.flatMap { it.getOutput(job, encodingProperties, filterSettings)?.audioStreams.orEmpty() }
+        val audio = audioEncodesToUse.flatMap { it.getOutput(context)?.audioStreams.orEmpty() }
         val videoInput = job.inputs.videoInput(inputLabel)
             ?: throw RuntimeException("No valid video input with label $inputLabel!")
         return Output(
@@ -59,8 +59,7 @@ interface VideoEncode : OutputProducer {
         params + Pair("c:v", codec) + passParams(2)
     }
 
-    fun passParams(pass: Int): Map<String, String> =
-        mapOf("pass" to pass.toString(), "passlogfile" to "log$suffix")
+    fun passParams(pass: Int): Map<String, String> = mapOf("pass" to pass.toString(), "passlogfile" to "log$suffix")
 
     fun videoFilter(
         debugOverlay: Boolean,

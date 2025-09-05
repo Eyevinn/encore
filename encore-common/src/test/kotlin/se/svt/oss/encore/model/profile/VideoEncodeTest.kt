@@ -12,6 +12,7 @@ import se.svt.oss.encore.Assertions.assertThat
 import se.svt.oss.encore.config.EncodingProperties
 import se.svt.oss.encore.defaultEncoreJob
 import se.svt.oss.encore.defaultVideoFile
+import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.AudioVideoInput
 import se.svt.oss.encore.model.output.AudioStreamEncode
 import se.svt.oss.encore.portraitVideoFile
@@ -36,8 +37,16 @@ abstract class VideoEncodeTest<T : VideoEncode> {
 
     @BeforeEach
     internal fun setUp() {
-        every { audioEncode.getOutput(any(), encodingProperties, filterSettings)?.audioStreams } returns listOf(audioStreamEncode)
+        every { audioEncode.getOutput(any())?.audioStreams } returns listOf(audioStreamEncode)
     }
+
+    private fun outputProducerContext(job: EncoreJob) =
+        OutputProducerContext(
+            job = job,
+            encodingProperties = encodingProperties,
+            filterSettings = filterSettings,
+            outputFolder = "",
+        )
 
     @Test
     fun `scale portrait input within portrait box`() {
@@ -51,18 +60,17 @@ abstract class VideoEncodeTest<T : VideoEncode> {
         )
         listOf(portraitVideoFile, rotateToPortraitVideoFile).forEach { analyzedFile ->
             val output = encode.getOutput(
-                defaultEncoreJob().copy(
-                    inputs = listOf(
-                        AudioVideoInput(
-                            uri = "/test.mp4",
-                            analyzed = analyzedFile,
+                outputProducerContext(
+                    defaultEncoreJob().copy(
+                        inputs = listOf(
+                            AudioVideoInput(
+                                uri = "/test.mp4",
+                                analyzed = analyzedFile,
+                            ),
                         ),
                     ),
                 ),
-                encodingProperties,
-                filterSettings,
             )
-
             assertThat(output?.video).hasFilter("scale=1080:1920:force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1/1")
         }
     }
@@ -78,17 +86,17 @@ abstract class VideoEncodeTest<T : VideoEncode> {
             audioEncode = audioEncode,
         )
         val output = encode.getOutput(
-            defaultEncoreJob().copy(
-                inputs = listOf(
-                    AudioVideoInput(
-                        uri = "/test.mp4",
-                        analyzed = defaultVideoFile,
-                        cropTo = "9:16",
+            outputProducerContext(
+                defaultEncoreJob().copy(
+                    inputs = listOf(
+                        AudioVideoInput(
+                            uri = "/test.mp4",
+                            analyzed = defaultVideoFile,
+                            cropTo = "9:16",
+                        ),
                     ),
                 ),
             ),
-            encodingProperties,
-            filterSettings,
         )
 
         assertThat(output?.video).hasFilter("scale=1080:1920:force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1/1")
@@ -104,7 +112,7 @@ abstract class VideoEncodeTest<T : VideoEncode> {
             filters = listOf("afilter"),
             audioEncode = audioEncode,
         )
-        val output = encode.getOutput(defaultEncoreJob(), encodingProperties, filterSettings)
+        val output = encode.getOutput(outputProducerContext(defaultEncoreJob()))
         assertThat(output)
             .hasOnlyAudioStreams(audioStreamEncode)
         val videoStreamEncode = output!!.video
@@ -120,7 +128,9 @@ abstract class VideoEncodeTest<T : VideoEncode> {
     @Test
     fun `single pass scale to height with custom scale filter`() {
         val filterSettings = FilterSettings(scaleFilter = "myscale")
-        every { audioEncode.getOutput(any(), encodingProperties, filterSettings)?.audioStreams } returns listOf(audioStreamEncode)
+        every { audioEncode.getOutput(any())?.audioStreams } returns listOf(
+            audioStreamEncode,
+        )
         val encode = createEncode(
             width = null,
             height = 1080,
@@ -129,7 +139,7 @@ abstract class VideoEncodeTest<T : VideoEncode> {
             filters = listOf("afilter"),
             audioEncode = audioEncode,
         )
-        val output = encode.getOutput(defaultEncoreJob(), encodingProperties, filterSettings)
+        val output = encode.getOutput(OutputProducerContext(defaultEncoreJob(), encodingProperties, filterSettings, ""))
         assertThat(output)
             .hasOnlyAudioStreams(audioStreamEncode)
         val videoStreamEncode = output!!.video
@@ -152,7 +162,7 @@ abstract class VideoEncodeTest<T : VideoEncode> {
             filters = listOf("afilter"),
             audioEncode = audioEncode,
         )
-        val output = encode.getOutput(defaultEncoreJob(), encodingProperties, filterSettings)
+        val output = encode.getOutput(outputProducerContext(defaultEncoreJob()))
         assertThat(output).isNotNull
         val videoStreamEncode = output!!.video
         assertThat(videoStreamEncode)

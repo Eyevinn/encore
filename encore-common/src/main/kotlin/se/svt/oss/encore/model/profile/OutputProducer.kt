@@ -19,7 +19,15 @@ import se.svt.oss.encore.model.output.Output
     JsonSubTypes.Type(value = GenericVideoEncode::class, name = "VideoEncode"),
     JsonSubTypes.Type(value = ThumbnailEncode::class, name = "ThumbnailEncode"),
     JsonSubTypes.Type(value = ThumbnailMapEncode::class, name = "ThumbnailMapEncode"),
+    JsonSubTypes.Type(value = SpeechToText::class, name = "SpeechToText"),
 )
 interface OutputProducer {
-    fun getOutput(job: EncoreJob, encodingProperties: EncodingProperties, filterSettings: FilterSettings): Output?
+    fun getOutput(context: OutputProducerContext): Output?
 }
+
+data class OutputProducerContext(
+    val job: EncoreJob,
+    val encodingProperties: EncodingProperties,
+    val filterSettings: FilterSettings,
+    val outputFolder: String,
+)
