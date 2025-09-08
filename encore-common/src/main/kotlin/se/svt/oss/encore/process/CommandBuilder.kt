@@ -145,7 +145,7 @@ class CommandBuilder(
                 log.debug { "No video outputs for video input ${input.videoLabel}" }
                 return@mapIndexedNotNull null
             }
-            val split = "split=${splits.size}${splits.joinToString("")}"
+            val split = splitFilter(splits)
             val analyzed = input.analyzedVideo
             val globalVideoFilters = globalVideoFilters(input, analyzed)
             val filters = (globalVideoFilters + split).joinToString(",")
@@ -161,6 +161,17 @@ class CommandBuilder(
                 }
             }
         return videoSplits + streamFilters
+    }
+
+    private fun splitFilter(splits: List<String>): String {
+        val splitFilter = profile.filterSettings.splitFilter
+
+        if (splitFilter.find { it == '=' } != null) {
+            // here we assume the size of the split is already included in the
+            // custom split filter.
+            return "${splitFilter}${splits.joinToString("")}"
+        }
+        return "$splitFilter=${splits.size}${splits.joinToString("")}"
     }
 
     private fun VideoStreamEncode?.usesInput(input: VideoIn) =
@@ -189,6 +200,7 @@ class CommandBuilder(
 
     private fun globalVideoFilters(input: VideoIn, videoFile: VideoFile): List<String> {
         val filters = mutableListOf<String>()
+        val filterSettings = profile.filterSettings
         val videoStream = videoFile.highestBitrateVideoStream
         if (videoStream.isInterlaced) {
             log.debug { "Video input ${input.videoLabel} is interlaced. Applying deinterlace filter." }
@@ -203,27 +215,30 @@ class CommandBuilder(
                 ?: videoStream.displayAspectRatio?.toFractionOrNull()
                 ?: defaultAspectRatio
             filters.add("setdar=${dar.stringValue()}")
-            filters.add("scale=iw*sar:ih")
+            filters.add("${filterSettings.scaleFilter}=iw*sar:ih")
         } else if (videoStream.sampleAspectRatio?.toFractionOrNull() == null) {
             filters.add("setsar=1/1")
         }
 
         input.cropTo?.toFraction()?.let {
-            filters.add("crop=min(iw\\,ih*${it.stringValue()}):min(ih\\,iw/(${it.stringValue()}))")
+            filters.add("${filterSettings.cropFilter}=min(iw\\,ih*${it.stringValue()}):min(ih\\,iw/(${it.stringValue()}))")
         }
         input.padTo?.toFraction()?.let {
-            filters.add("pad=aspect=${it.stringValue()}:x=(ow-iw)/2:y=(oh-ih)/2")
+            filters.add("${filterSettings.padFilter}=aspect=${it.stringValue()}:x=(ow-iw)/2:y=(oh-ih)/2")
         }
         return filters + input.videoFilters
     }
 
-    private fun globalAudioFilters(input: AudioIn, analyzed: MediaContainer): List<String> = if (analyzed.audioLayout() == AudioLayout.MONO_STREAMS) {
-        val channelLayout = input.channelLayout(encodingProperties.defaultChannelLayouts)
-        val map = channelLayout.channels.withIndex().joinToString("|") { "${it.index}.0-${it.value}" }
-        listOf("join=inputs=${channelLayout.channels.size}:channel_layout=${channelLayout.layoutName}:map=$map")
-    } else {
-        emptyList()
-    } + input.audioFilters
+    private fun globalAudioFilters(input: AudioIn, analyzed: MediaContainer): List<String> =
+        if (analyzed.audioLayout() == AudioLayout.MONO_STREAMS ||
+            analyzed.audioLayout() == AudioLayout.MIXED_MONO_MULTI
+        ) {
+            val channelLayout = input.channelLayout(encodingProperties.defaultChannelLayouts)
+            val map = channelLayout.channels.withIndex().joinToString("|") { "${it.index}.0-${it.value}" }
+            listOf("join=inputs=${channelLayout.channels.size}:channel_layout=${channelLayout.layoutName}:map=$map")
+        } else {
+            emptyList()
+        } + input.audioFilters
 
     private fun firstPassParams(output: Output): List<String> {
         if (output.video == null) {

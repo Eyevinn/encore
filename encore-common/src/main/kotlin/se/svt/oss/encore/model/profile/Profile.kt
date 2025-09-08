@@ -10,5 +10,14 @@ data class Profile(
     val encodes: List<OutputProducer>,
     val scaling: String? = "bicubic",
     val deinterlaceFilter: String = "yadif",
+    val filterSettings: FilterSettings = FilterSettings(),
     val joinSegmentParams: LinkedHashMap<String, Any?> = linkedMapOf(),
+)
+
+data class FilterSettings(
+    val splitFilter: String = "split",
+    val scaleFilter: String = "scale",
+    val scaleFilterParams: LinkedHashMap<String, String> = linkedMapOf(),
+    val cropFilter: String = "crop",
+    val padFilter: String = "pad",
 )

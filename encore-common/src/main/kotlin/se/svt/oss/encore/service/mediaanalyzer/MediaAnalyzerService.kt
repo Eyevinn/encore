@@ -22,6 +22,8 @@ import se.svt.oss.mediaanalyzer.ffprobe.SideData
 import se.svt.oss.mediaanalyzer.ffprobe.UnknownSideData
 import se.svt.oss.mediaanalyzer.ffprobe.UnknownStream
 import se.svt.oss.mediaanalyzer.file.AudioFile
+import se.svt.oss.mediaanalyzer.file.ImageFile
+import se.svt.oss.mediaanalyzer.file.SubtitleFile
 import se.svt.oss.mediaanalyzer.file.VideoFile
 import se.svt.oss.mediaanalyzer.mediainfo.AudioTrack
 import se.svt.oss.mediaanalyzer.mediainfo.GeneralTrack
@@ -30,6 +32,7 @@ import se.svt.oss.mediaanalyzer.mediainfo.MediaInfo
 import se.svt.oss.mediaanalyzer.mediainfo.OtherTrack
 import se.svt.oss.mediaanalyzer.mediainfo.TextTrack
 import se.svt.oss.mediaanalyzer.mediainfo.VideoTrack
+import java.util.concurrent.ConcurrentHashMap
 
 private val log = KotlinLogging.logger {}
 
@@ -52,26 +55,53 @@ private val log = KotlinLogging.logger {}
 )
 class MediaAnalyzerService(private val mediaAnalyzer: MediaAnalyzer) {
 
+    val ffprobeValidParams = getValidFfprobeParams()
+
     fun analyzeInput(input: Input) {
         log.debug { "Analyzing input $input" }
         val probeInterlaced = input is VideoIn && input.probeInterlaced
         val useFirstAudioStreams = (input as? AudioIn)?.channelLayout?.channels?.size
+        val ffprobeInputParams = LinkedHashMap(input.params.filterKeys { ffprobeValidParams.contains(it) })
 
         input.analyzed = mediaAnalyzer.analyze(
-            file = input.uri,
+            file = input.accessUri,
             probeInterlaced = probeInterlaced,
-            ffprobeInputParams = input.params,
-        ).let {
-            val selectedVideoStream = (input as? VideoIn)?.videoStream
-            val selectedAudioStream = (input as? AudioIn)?.audioStream
-            when (it) {
-                is VideoFile -> it.selectVideoStream(selectedVideoStream)
-                    .selectAudioStream(selectedAudioStream)
-                    .trimAudio(useFirstAudioStreams)
-                is AudioFile -> it.selectAudioStream(selectedAudioStream)
-                    .trimAudio(useFirstAudioStreams)
-                else -> it
+            ffprobeInputParams = ffprobeInputParams,
+        )
+            .let {
+                val selectedVideoStream = (input as? VideoIn)?.videoStream
+                val selectedAudioStream = (input as? AudioIn)?.audioStream
+                when (it) {
+                    is VideoFile -> it.selectVideoStream(selectedVideoStream)
+                        .selectAudioStream(selectedAudioStream)
+                        .trimAudio(useFirstAudioStreams)
+                        .copy(file = input.uri)
+                    is AudioFile -> it.selectAudioStream(selectedAudioStream)
+                        .trimAudio(useFirstAudioStreams)
+                        .copy(file = input.uri)
+                    is ImageFile -> it.copy(file = input.uri)
+                    is SubtitleFile -> it.copy(file = input.uri)
+                    else -> it
+                }
             }
-        }
     }
+}
+
+fun getValidFfprobeParams(): Set<String> {
+    val process = ProcessBuilder("ffprobe", "-h")
+        .redirectErrorStream(true)
+        .start()
+    val output = process.inputStream.bufferedReader().use { it.readText() }
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        log.error { "Failed to get valid ffprobe parameters, ffprobe failed with exit code: $exitCode" }
+        return emptySet()
+    }
+    val result = ConcurrentHashMap.newKeySet<String>()
+    output.lines().filter { it.startsWith("  -") || it.startsWith("-") }
+        .forEach { line ->
+            val param = line.substringAfter("-").substringBefore(" ")
+            result.add(param)
+        }
+    return result
 }

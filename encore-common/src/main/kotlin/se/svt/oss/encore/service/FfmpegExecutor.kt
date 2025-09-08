@@ -54,6 +54,7 @@ class FfmpegExecutor(
             it.getOutput(
                 encoreJob,
                 encodingProperties,
+                profile.filterSettings,
             )
         }
 

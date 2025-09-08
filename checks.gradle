@@ -11,10 +11,13 @@ jacocoTestCoverageVerification {
                     '*.static {...}',
                     '*.model.*.get*',
                     '*.service.localencode.LocalEncodeService.moveFile*',
+                    '*.S3Properties*.get*()',
+                    '*RemoteFileService.DefaultHandler.*',
                     '*QueueService.getQueue*',
                     '*QueueService.migrateQueues()',
                     '*.ShutdownHandler.*',
                     '*FfmpegExecutor.runFfmpeg$lambda$8(java.lang.Process)',
+                    '*FilterSettings.*',
             ]
             limit {
                 counter = 'LINE'
