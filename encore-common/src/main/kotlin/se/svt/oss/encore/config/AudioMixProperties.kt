@@ -5,5 +5,5 @@ import org.springframework.core.io.Resource
 
 @ConfigurationProperties("audio-mix-presets")
 data class AudioMixProperties(
-    val location: Resource,
+    val location: Resource? = null,
 )

@@ -40,3 +40,5 @@ encore-settings:
 
 profile:
   location: classpath:profile/profiles.yml
+audio-mix-presets:
+  location: classpath:audiomixpreset/audio-mix-presets.yml

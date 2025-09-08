@@ -11,8 +11,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service
 import se.svt.oss.encore.config.AudioMixPreset
 import se.svt.oss.encore.config.AudioMixProperties
-import se.svt.oss.encore.model.EncoreJob
-import se.svt.oss.encore.model.profile.AudioEncode
 import java.io.File
 import java.util.Locale
 
@@ -22,7 +20,7 @@ private val log = KotlinLogging.logger {}
 @RegisterReflectionForBinding(AudioMixPreset::class)
 @EnableConfigurationProperties(AudioMixProperties::class)
 class AudioMixPresetService(
-    private val properties: AudioMixProperties,
+    private val properties: AudioMixProperties?,
     private val objectMapper: ObjectMapper,
 ) {
     private val yamlMapper: YAMLMapper =
@@ -31,21 +29,21 @@ class AudioMixPresetService(
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) as YAMLMapper
 
     private fun mapper() =
-        if (properties.location.filename?.let {
+        if (properties?.location?.filename?.let {
                 File(it).extension.lowercase(Locale.getDefault()) in setOf("yml", "yaml")
-            } == true) {
+            } == true
+        ) {
             yamlMapper
         } else {
             objectMapper
         }
 
-    fun getAudioMixPreset(encode: AudioEncode): AudioMixPreset = try {
-        log.debug { "Get audio mix preset ${encode.audioMixPreset}. Reading presets from ${properties.location}" }
-        val presets = mapper().readValue<Map<String, AudioMixPreset>>(properties.location.inputStream)
-
-        presets[encode.audioMixPreset]
-            ?: throw RuntimeException("Could not find preset ${encode.audioMixPreset}! presets: ${presets}")
+    fun getAudioMixPresets(): Map<String, AudioMixPreset> = try {
+        log.debug { "Reading presets from ${properties?.location}" }
+        properties?.location?.let { location ->
+            mapper().readValue<Map<String, AudioMixPreset>>(location.inputStream)
+        } ?: emptyMap()
     } catch (e: JsonProcessingException) {
-        throw RuntimeException("Error parsing audio mix preset ${e.message}")
+        throw RuntimeException("Error parsing audio mix presets ${e.message}")
     }
 }
