@@ -49,7 +49,7 @@ class FfmpegExecutor(
         val profile = profileService.getProfile(encoreJob)
         val audioMixPresets = audioMixService.getAudioMixPresets(encoreProperties.encoding)
         val encodingProperties =
-            encoreProperties.encoding.copy(audioMixPresets = audioMixPresets.ifEmpty { encoreProperties.encoding.audioMixPresets })
+            encoreProperties.encoding.copy(audioMixPresets = audioMixPresets)
         val outputs = profile.encodes.mapNotNull {
             it.getOutput(
                 encoreJob,

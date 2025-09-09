@@ -39,7 +39,7 @@ class AudioMixPresetService(
         log.debug { "Reading presets from ${encodingProperties.audioMixPresetLocation}" }
         encodingProperties.audioMixPresetLocation?.let { location ->
             mapper(encodingProperties).readValue<Map<String, AudioMixPreset>>(location.inputStream)
-        } ?: emptyMap()
+        } ?: encodingProperties.audioMixPresets
     } catch (e: JsonProcessingException) {
         throw RuntimeException("Error parsing audio mix presets ${e.message}")
     }
