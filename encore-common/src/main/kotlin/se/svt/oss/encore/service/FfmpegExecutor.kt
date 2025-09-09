@@ -47,7 +47,7 @@ class FfmpegExecutor(
     ): List<MediaFile> {
         ShutdownHandler.checkShutdown()
         val profile = profileService.getProfile(encoreJob)
-        val audioMixPresets = audioMixService.getAudioMixPresets(encoreProperties.encoding)
+        val audioMixPresets = audioMixService.getAudioMixPresets()
         val encodingProperties =
             encoreProperties.encoding.copy(audioMixPresets = audioMixPresets)
         val outputs = profile.encodes.mapNotNull {
