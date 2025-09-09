@@ -7,10 +7,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service
 import se.svt.oss.encore.config.AudioMixPreset
-import se.svt.oss.encore.config.AudioMixProperties
+import se.svt.oss.encore.config.EncodingProperties
 import java.io.File
 import java.util.Locale
 
@@ -18,9 +17,7 @@ private val log = KotlinLogging.logger {}
 
 @Service
 @RegisterReflectionForBinding(AudioMixPreset::class)
-@EnableConfigurationProperties(AudioMixProperties::class)
 class AudioMixPresetService(
-    private val properties: AudioMixProperties?,
     private val objectMapper: ObjectMapper,
 ) {
     private val yamlMapper: YAMLMapper =
@@ -28,8 +25,8 @@ class AudioMixPresetService(
             .findAndRegisterModules()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) as YAMLMapper
 
-    private fun mapper() =
-        if (properties?.location?.filename?.let {
+    private fun mapper(encodingProperties: EncodingProperties) =
+        if (encodingProperties.audioMixPresetLocation?.filename?.let {
                 File(it).extension.lowercase(Locale.getDefault()) in setOf("yml", "yaml")
             } == true
         ) {
@@ -38,10 +35,10 @@ class AudioMixPresetService(
             objectMapper
         }
 
-    fun getAudioMixPresets(): Map<String, AudioMixPreset> = try {
-        log.debug { "Reading presets from ${properties?.location}" }
-        properties?.location?.let { location ->
-            mapper().readValue<Map<String, AudioMixPreset>>(location.inputStream)
+    fun getAudioMixPresets(encodingProperties: EncodingProperties): Map<String, AudioMixPreset> = try {
+        log.debug { "Reading presets from ${encodingProperties.audioMixPresetLocation}" }
+        encodingProperties.audioMixPresetLocation?.let { location ->
+            mapper(encodingProperties).readValue<Map<String, AudioMixPreset>>(location.inputStream)
         } ?: emptyMap()
     } catch (e: JsonProcessingException) {
         throw RuntimeException("Error parsing audio mix presets ${e.message}")
