@@ -1,0 +1,6 @@
+default:
+  default-pan:
+    stereo: FL=FL+0.707107*FC+0.707107*BL+0.707107*SL|FR=FR+0.707107*FC+0.707107*BR+0.707107*SR
+  pan-mapping:
+    mono:
+      stereo: FL=0.707*FC|FR=0.707*FC
