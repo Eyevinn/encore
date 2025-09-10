@@ -8,6 +8,10 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty
 import org.springframework.core.io.Resource
 import se.svt.oss.encore.model.profile.ChannelLayout
 
+data class SegmentedEncodingProperties(
+    val enabledForAudio: Boolean = true,
+)
+
 data class EncodingProperties(
     val audioMixPresetLocation: Resource? = null,
     @NestedConfigurationProperty
@@ -17,4 +21,6 @@ data class EncodingProperties(
     val flipWidthHeightIfPortrait: Boolean = true,
     val exitOnError: Boolean = true,
     val globalParams: LinkedHashMap<String, Any?> = linkedMapOf(),
+    @NestedConfigurationProperty
+    val segmentedEncoding: SegmentedEncodingProperties = SegmentedEncodingProperties(),
 )
