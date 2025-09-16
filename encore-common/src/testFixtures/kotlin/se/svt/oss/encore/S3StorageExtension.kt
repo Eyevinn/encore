@@ -24,7 +24,6 @@ class S3StorageExtension : BeforeAllCallback {
         localstack.start()
 
         log.info { "localstack endpoint: ${localstack.endpoint}" }
-
         System.setProperty("aws.accessKeyId", localstack.accessKey)
         System.setProperty("aws.secretAccessKey", localstack.secretKey)
         System.setProperty("remote-files.s3.endpoint", localstack.endpoint.toString())
