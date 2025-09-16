@@ -19,6 +19,15 @@ class FfmpegExecutorTest {
         }
 
         @Test
+        fun `logline with elapsed on end`() {
+            val logLine = "[info] frame= 2896 fps= 75 q=27.0 size=   35328KiB time=00:01:55.76 bitrate=2500.1kbits/s dup=118 drop=0 speed=3.01x elapsed=0:00:38.51"
+            val duration = 2894.0
+            val progress = getProgress(duration, logLine)
+            assertNotNull(progress)
+            assertEquals(4, progress)
+        }
+
+        @Test
         fun `invalid logline, returns null`() {
             val logLine = "RANDOM LOG LINE"
             val duration = 20.0 // seconds
