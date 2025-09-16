@@ -33,7 +33,7 @@ enum class EncodingMode {
 }
 
 val progressRegex =
-    Regex(".*time=(?<hours>\\d{2}):(?<minutes>\\d{2}):(?<seconds>\\d{2}\\.\\d+) .* speed= *(?<speed>[0-9.e-]+x) *")
+    Regex(".*time=(?<hours>\\d{2}):(?<minutes>\\d{2}):(?<seconds>\\d{2}\\.\\d+) .* speed= *(?<speed>[0-9.e-]+x).*")
 
 fun getProgress(duration: Double?, line: String): Int? = if (duration != null && duration > 0) {
     progressRegex.matchEntire(line)?.let {
