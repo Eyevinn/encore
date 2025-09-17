@@ -11,11 +11,13 @@ import mu.KotlinLogging
 import org.awaitility.Durations
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestPropertySource
 import se.svt.oss.encore.Assertions.assertThat
 import se.svt.oss.encore.model.Status
 import se.svt.oss.encore.model.callback.JobProgress
@@ -25,9 +27,7 @@ import java.io.File
 import java.nio.file.Paths
 
 @ExtendWith(S3StorageExtension::class)
-@ActiveProfiles(profiles = ["test-local", "test-s3"])
-@WireMockTest
-class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIntegrationTestBase(wireMockRuntimeInfo) {
+abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIntegrationTestBase(wireMockRuntimeInfo) {
     private val log = KotlinLogging.logger {}
 
     @Autowired
@@ -61,7 +61,6 @@ class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : Encore
         }
     }
 
-    @Test
     fun jobWiths3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
         val filename = "test.mp4"
         val remoteInput = uploadInputfile(testFileSurround.file.absolutePath, filename)
@@ -103,5 +102,31 @@ class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : Encore
         s3Client.putObject({ it.bucket(inputBucket).key(key).build() }, Paths.get(localPath))
 
         return "s3://$inputBucket/$key"
+    }
+
+    @Nested
+    @ActiveProfiles(profiles = ["test-local", "test-s3"])
+    @WireMockTest
+    class StandardS3Access(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreS3IntegrationTest(wireMockRuntimeInfo) {
+        @Test
+        fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
+            super.jobWiths3InputAndOutputIsSuccessful(outputDir)
+        }
+    }
+
+    @Nested
+    @ActiveProfiles(profiles = ["test-local", "test-s3"])
+    @TestPropertySource(
+        properties = [
+            "remote-files.s3.anonymous-access=true",
+            "remote-files.s3.use-path-style=true", // localstack requires path style access
+        ],
+    )
+    @WireMockTest
+    class AnonymousS3Access(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreS3IntegrationTest(wireMockRuntimeInfo) {
+        @Test
+        fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
+            super.jobWiths3InputAndOutputIsSuccessful(outputDir)
+        }
     }
 }

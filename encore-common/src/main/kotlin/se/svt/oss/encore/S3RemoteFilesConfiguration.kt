@@ -17,6 +17,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.transfer.s3.S3TransferManager
 import java.net.URI
 
 @ConditionalOnProperty("remote-files.s3.enabled", havingValue = "true")
@@ -27,6 +28,12 @@ class S3RemoteFilesConfiguration {
     @Bean
     fun s3Region() =
         Region.of(System.getProperty("aws.region") ?: System.getenv("AWS_REGION") ?: "us-east-1")
+
+    @Bean
+    fun transferManager(s3Client: S3AsyncClient, s3Properties: S3Properties): S3TransferManager =
+        S3TransferManager.builder()
+            .s3Client(s3Client)
+            .build()
 
     @Bean
     fun s3Client(s3Region: Region, s3Properties: S3Properties) = S3AsyncClient.builder()
@@ -42,11 +49,11 @@ class S3RemoteFilesConfiguration {
             if (s3Properties.anonymousAccess) {
                 AnonymousCredentialsProvider.create()
             } else {
-                DefaultCredentialsProvider.create()
+                DefaultCredentialsProvider.builder().build()
             },
         )
         .apply {
-            if (!s3Properties.endpoint.isNullOrBlank()) {
+            if (s3Properties.endpoint.isNotBlank()) {
                 endpointOverride(URI.create(s3Properties.endpoint))
             }
         }
@@ -76,6 +83,7 @@ class S3RemoteFilesConfiguration {
         s3Presigner: S3Presigner,
         s3Properties: S3Properties,
         s3UriConverter: S3UriConverter,
+        transferManager: S3TransferManager,
     ) =
-        S3RemoteFileHandler(s3Client, s3Presigner, s3Properties, s3UriConverter)
+        S3RemoteFileHandler(s3Client, s3Presigner, s3Properties, s3UriConverter, transferManager)
 }

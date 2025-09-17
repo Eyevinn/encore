@@ -11,6 +11,7 @@ import java.time.Duration
 data class S3Properties(
     val enabled: Boolean = false,
     val anonymousAccess: Boolean = false,
+    val usePathStyle: Boolean = false,
     val endpoint: String = "",
     val presignDurationSeconds: Long = Duration.ofHours(12).seconds,
     val uploadTimeoutSeconds: Long = Duration.ofHours(1).seconds,

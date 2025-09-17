@@ -16,8 +16,9 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j")
-    implementation(platform("software.amazon.awssdk:bom:2.29.2"))
+    implementation(platform("software.amazon.awssdk:bom:2.33.9"))
     implementation("software.amazon.awssdk:s3")
+    implementation("software.amazon.awssdk:s3-transfer-manager")
 
     testImplementation(project(":encore-web"))
     testImplementation("org.springframework.security:spring-security-test")
