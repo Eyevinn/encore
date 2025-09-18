@@ -41,7 +41,7 @@ class S3UriConverterTest {
             val s3UriConverter = S3UriConverter(s3Properties.copy(endpoint = endpoint), region)
 
             val httpUri = s3UriConverter.toHttp(s3Uri)
-            assertThat(httpUri).isEqualTo("https://my-bucket.some-host:1234/test2/test1_x264_3100.mp4")
+            assertThat(httpUri).isEqualTo("https://some-host:1234/my-bucket/test2/test1_x264_3100.mp4")
         }
 
         @Test
@@ -50,16 +50,16 @@ class S3UriConverterTest {
             val s3UriConverter = S3UriConverter(s3Properties.copy(endpoint = endpoint), region)
 
             val httpUri = s3UriConverter.toHttp(s3Uri)
-            assertThat(httpUri).isEqualTo("https://my-bucket.some-host/test2/test1_x264_3100.mp4")
+            assertThat(httpUri).isEqualTo("https://some-host/my-bucket/test2/test1_x264_3100.mp4")
         }
 
         @Test
-        fun customEndpointReturnsCorrectPathStyleUri() {
+        fun customEndpointReturnsCorrectHostStyleUri() {
             val endpoint = "http://some-host:1234"
-            val s3UriConverter = S3UriConverter(s3Properties.copy(endpoint = endpoint, usePathStyle = true), region)
+            val s3UriConverter = S3UriConverter(s3Properties.copy(endpoint = endpoint, usePathStyle = false), region)
 
             val httpUri = s3UriConverter.toHttp(s3Uri)
-            assertThat(httpUri).isEqualTo("http://some-host:1234/my-bucket/test2/test1_x264_3100.mp4")
+            assertThat(httpUri).isEqualTo("http://my-bucket.some-host:1234/test2/test1_x264_3100.mp4")
         }
 
         @Test
