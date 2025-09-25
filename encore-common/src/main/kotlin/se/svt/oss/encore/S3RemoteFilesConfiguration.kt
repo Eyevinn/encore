@@ -39,10 +39,16 @@ class S3RemoteFilesConfiguration {
     fun s3Client(s3Region: Region, s3Properties: S3Properties) = S3AsyncClient.builder()
         .region(s3Region)
         .crossRegionAccessEnabled(true)
+        .multipartConfiguration { multipartConfigurationBuilder ->
+            multipartConfigurationBuilder
+                .minimumPartSizeInBytes(s3Properties.multipart.minimumPartSize)
+                .thresholdInBytes(s3Properties.multipart.threshold)
+                .apiCallBufferSizeInBytes(s3Properties.multipart.apiCallBufferSize)
+        }
         .multipartEnabled(!s3Properties.anonymousAccess) // Multipart upload requires credentials
         .serviceConfiguration(
             S3Configuration.builder()
-                .pathStyleAccessEnabled(true)
+                .pathStyleAccessEnabled(s3Properties.usePathStyle)
                 .build(),
         )
         .credentialsProvider(
