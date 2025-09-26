@@ -7,6 +7,10 @@
 
 &nbsp;
 &nbsp;
+
+__*This repository hosts the encore fork maintained by [Eyevinn technology](https://eyevinn.se).
+The upstream SVT Encore repository can be found at https://github.com/svt/encore.
+For more info about the fork, please see the [README-eyevinn.md](README-eyevinn.md) file.*__
   
 SVT *Encore* is a scalable video transcoding tool, built on Open Source giants like [FFmpeg](https://www.ffmpeg.org/) and [Spring Boot](https://spring.io/projects/spring-boot).
 
