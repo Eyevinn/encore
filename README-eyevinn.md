@@ -7,6 +7,8 @@ for new features and enable rapid development.
 The intention is to keep the difference from upstream as small as possible by contributing
 all new features back to upstream.
 
+For information on changes in this fork compare to upstream, see [Releasenotes](RELEASENOTES-eyevinn.md)
+
 ## Branches, versions and releases in this repo
 ### master branch
 The master branch tracks the upstream master. No development should be done on this branch.
@@ -41,6 +43,7 @@ both methods are describe below.
 3. Use `git cherry-pick` to transfer all changes from the previous release branch that are not included
    in the new upstrem release to the new release branch
 4. Create a new release `va.b.c-1`.
+5. Update repository setting so that new branch is the default branch
 
 ### New release branch with `git rebase`
 1. Pull the changes from upstream into this repositories `master` branch.
@@ -48,6 +51,7 @@ both methods are describe below.
    new upstream release version.
 3. Use `git rebase` to reabse the new release branch onto `master`.
 4. Create a new release `va.b.c-1`.
+5. Update repository setting so that new branch is the default branch
 
 ## Contributing to this fork
 To contribute a new feature, bug fix etc based on this repository, follow the steps below.
