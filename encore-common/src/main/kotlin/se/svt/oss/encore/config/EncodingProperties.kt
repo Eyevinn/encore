@@ -6,10 +6,11 @@ package se.svt.oss.encore.config
 
 import org.springframework.boot.context.properties.NestedConfigurationProperty
 import org.springframework.core.io.Resource
+import se.svt.oss.encore.model.AudioEncodingMode
 import se.svt.oss.encore.model.profile.ChannelLayout
 
 data class SegmentedEncodingProperties(
-    val enabledForAudio: Boolean = true,
+    val audioEncodingMode: AudioEncodingMode = AudioEncodingMode.ENCODE_WITH_VIDEO,
 )
 
 data class EncodingProperties(

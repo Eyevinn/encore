@@ -16,6 +16,7 @@ encodes:
       force_key_frames: expr:not(mod(n,96))
       profile:v: high
       level: 4.1
+      preset: ultrafast
     audioEncode:
       type: AudioEncode
       bitrate: 128k
@@ -39,6 +40,7 @@ encodes:
     suffix: _SURROUND
     optional: true
     channelLayout: '5.1'
+    enabled: #{profileParams['enableSurround'] ?: 'true'}
 
   - type: AudioEncode
     codec: ac3
@@ -49,3 +51,4 @@ encodes:
     audioMixPreset: de
     optional: true
     channelLayout: '5.1'
+    enabled: #{profileParams['enableSurround'] ?: 'true'}

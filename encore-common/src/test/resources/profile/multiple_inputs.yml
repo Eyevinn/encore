@@ -15,28 +15,7 @@ encodes:
       force_key_frames: expr:not(mod(n,96))
       profile:v: high
       level: 4.1
-    x264-params:
-      deblock: 0,0
-      aq-mode: 1
-      aq-strength: 1.0
-      b-adapt: 2
-      bframes: 6
-      b-bias: 0
-      b-pyramid: 2
-      chroma-qp-offset: -2
-      direct: auto
-      rc-lookahead: 60
-      keyint: 192
-      keyint_min: 96
-      me: hex
-      merange: 16
-      cabac: 1
-      partitions: all
-      ref: 4
-      scenecut: 40
-      subme: 9
-      trellis: 2
-      weightp: 2
+      preset: ultrafast
     audioEncode:
       type: AudioEncode
       bitrate: 128k
