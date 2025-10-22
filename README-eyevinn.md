@@ -14,51 +14,56 @@ For information on changes in this fork compare to upstream, see [Releasenotes](
 The master branch tracks the upstream master. No development should be done on this branch.
 
 ### Release branches
-This fork uses release branches, where each version a.b.c from upstream forms the basis for a branch
-`release-a.b.c` in this repository. New features/PR should be developed on the latest release branch.
+This fork uses release branches, where the active release branch, based on the latest
+version from upstreadm, is the `release` branch.
+Older release branches based on earlier upstream versions are named `release-a.b.c` where
+a.b.c is the upstream version the branch is based on.
+New features/PR should be developed on the `release` branch.
 
 ### Release versioning
-Releases in this repo follows a versioning scheme `a.b.c-d` where `a.b.c` would be the version of the
-current upstream release, and `d` would start at 1 for each release branch and then be incremented
+Releases in this repo follows a versioning scheme `a.b.c-d` where `a.b.c` would be the version of the upstream release,
+and `d` would start at 1 for each release branch and then be incremented
 by one for each release from that branch.
 
 ## Creating a new release
 1. Make sure all changes for the release are merged into the release branch
 2. Run `./gradlew clean build` to make sure everything builds correctly
-3. Tag the head of the release branch with the new version `a.b.c-d` (See [Release versioning](#release-versioning) above)
-4. Push the tag to the remote repository. The project will be built and a release created automatically.
-5. Edit the description of the release on GitHub to include relevant information about the release.
+3. Updated the `RELEASENOTES-eyevinn.md` file to include relevant information about the release.
+4. Tag the head of the release branch with the new version `x.y.z-d` (See [Release versioning](#release-versioning) above)
+5. Push the tag to the remote repository. The project will be built and a release created automatically.
+6. Edit the description of the release on GitHub to include relevant information about the release.
 
 ## Keeping in sync with upstream
-When a new version is released in the upstream repository, new release branch based on the latest upstream release
-should be created. This release branch should include all changes from the previous release branch that are not
-included in the new upstream release. This can be done either by using `git rebase` or `git cherry-pick`,
-both methods are describe below.
+When a new version is released in the upstream repository, a branch `release-a.b.c` (where a.b.c is the previous
+release version) should be created off of the current `release` branch. The `release` branch should then be updated
+to track the new upstream release, and should include any changes from the previous release
+that are not included in the new release. This can be done either by using `git rebase` or `git cherry-pick`.
+Both methods are describe below, git rebase is the preferred method.
 
-
-### New release branch with `git cherry-pick`
+### New release branch with `git rebase`  (for new upstream version x.y.z)
 1. Pull the changes from upstream into this repositories `master` branch.
-2. Create a new branch off of `master` called `release-a.b.c`, where `a.b.c` is the
-   new upstream release version.
-3. Use `git cherry-pick` to transfer all changes from the previous release branch that are not included
+2. Create a new branch `release-a.b.c` off of `release` where `a.b.c` is the **previous** upstream release version.
+3. Use `git rebase` to rebase `release` branch onto `master`.
+4. Push the `release` branch to the remote repository `git push -f`.
+5. Create a new release `vx.y.z-1`. from teh `release` branch.
+
+### New release branch with `git cherry-pick` (for new upstream version x.y.z)
+1. Pull the changes from upstream into this repositories `master` branch.
+2. Create a new branch `release-a.b.c` off of `release` where `a.b.c` is the **previous** upstream release version.
+3. Reset `release` to point to master: `git reset --hard master`. _**Warning: this is a destructive operation, so 
+make sure you have performed the previous step first to preserve the previous release branch**_
+4. Use `git cherry-pick` to transfer all changes from the previous release branch `release-a.b.c` that are not included
    in the new upstrem release to the new release branch
-4. Create a new release `va.b.c-1`.
-5. Update repository setting so that new branch is the default branch
+5. Push the `release` branch to the remote repository `git push -f`.
+6. Create a new release `vx.y.z-1` from the `release` branch.
 
-### New release branch with `git rebase`
-1. Pull the changes from upstream into this repositories `master` branch.
-2. Create a new branch off of the previous release branch called `release-a.b.c`, where `a.b.c` is the
-   new upstream release version.
-3. Use `git rebase` to reabse the new release branch onto `master`.
-4. Create a new release `va.b.c-1`.
-5. Update repository setting so that new branch is the default branch
 
 ## Contributing to this fork
 To contribute a new feature, bug fix etc based on this repository, follow the steps below.
 Breaking changes, and changes to default behaviour should be avoided if possible.
 Also see the [general contribution guidelines](CONTRIBUTING.adoc).
 
-1. Create a branch from the lastest release branch
+1. Create a branch from the `release` branch
 2. Implement your changes
 3. Unless there is a specific reason not to, squash your changes into a single commit
 4. Make sure your commit messages are in accordance with the [general contribution guidelines](CONTRIBUTING.adoc),
