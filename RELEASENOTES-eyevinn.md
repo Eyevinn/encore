@@ -1,3 +1,18 @@
+# Release notes v0.2.11-1
+## Changes compared to previous eyevinn release (v0.2.10-1)
+- SimpleAudioEncode is now enabled by default
+
+## Changed compared to latest upstream release (v0.2.11)
+- Add documentation for eyevinn encore fork
+- Fix regex for parsing progress now works for ffmpeg 8
+- Add support for encoding audio separately without segmenting when using segmented encoding
+- Audio mix presets can have separate location
+- Support for specifying custom filters for split,scale,crop,pad
+- Sanitize ffprobe input parameters
+- Support for input with mix of mono and multitrack audiostreams
+- Support s3 urls for input and output
+
+
 # Release notes v0.2.10-1
 ## Changes compared to previous eyevinn release (v0.2.9-2)
 - Added properties to video encode: cropTo, padTo, both applied before scaling
