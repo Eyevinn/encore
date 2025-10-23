@@ -221,7 +221,14 @@ class EncoreService(
             encoreJob.message = e.message
         } finally {
             repository.save(encoreJob)
-            sharedWorkDirOrNull(encoreJob)?.deleteRecursively()
+            val sharedWorkdDir = sharedWorkDirOrNull(encoreJob)
+            if (sharedWorkdDir != null && sharedWorkdDir.exists()) {
+                if (encoreJob.profileParams["debug.keepSharedWorkDir"]?.toString().toBoolean()) {
+                    log.info { "Keeping shared work dir per profileParams setting: ${sharedWorkDirOrNull(encoreJob)}" }
+                } else {
+                    sharedWorkDirOrNull(encoreJob)?.deleteRecursively()
+                }
+            }
             redisMessageListerenerContainer.removeMessageListener(cancelListener)
             progressListener?.let { redisMessageListerenerContainer.removeMessageListener(it) }
             callbackService.sendProgressCallback(encoreJob)
