@@ -1,3 +1,21 @@
+# Release notes v0.2.11-2
+## Changes compared to previous eyevinn release (v0.2.11-1)
+- Add support for segmented encoding of audio
+- Add support for setting profile param 'debug.keepSharedWorkDir' to keep working directory after encoding for debugging purposes
+
+## Changed compared to latest upstream release (v0.2.11)
+- Add support for segmented encoding of audio
+- Add support for setting profile param 'debug.keepSharedWorkDir' to keep working directory after encoding for debugging purposes
+- Add documentation for eyevinn encore fork
+- Fix regex for parsing progress now works for ffmpeg 8
+- Add support for encoding audio separately without segmenting when using segmented encoding
+- Audio mix presets can have separate location
+- Support for specifying custom filters for split,scale,crop,pad
+- Sanitize ffprobe input parameters
+- Support for input with mix of mono and multitrack audiostreams
+- Support s3 urls for input and output
+
+
 # Release notes v0.2.11-1
 ## Changes compared to previous eyevinn release (v0.2.10-1)
 - SimpleAudioEncode is now enabled by default
