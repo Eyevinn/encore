@@ -209,7 +209,7 @@ class SegmentedEncodeServiceTest {
                 outputFolder = outputFolder.absolutePath,
             )
 
-            val operations = service.prepareJoinSegment(encoreJob, workDir)
+            val operations = service.prepareJoinSegment(encoreJob, outputFolder, workDir)
 
             assertEquals(2, operations.size)
             assertOperationMatches(
@@ -239,7 +239,7 @@ class SegmentedEncodeServiceTest {
                 outputFolder = outputFolder.absolutePath,
             )
 
-            val operations = service.prepareJoinSegment(encoreJob, workDir)
+            val operations = service.prepareJoinSegment(encoreJob, outputFolder, workDir)
 
             assertEquals(2, operations.size)
             assertOperationMatches(
@@ -274,7 +274,7 @@ class SegmentedEncodeServiceTest {
                 outputFolder = outputFolder.absolutePath,
             )
 
-            val operations = service.prepareJoinSegment(encoreJob, workDir)
+            val operations = service.prepareJoinSegment(encoreJob, outputFolder, workDir)
 
             // Should have 2 operations:
             // 1. Video join operation for test_720p.mp4 (with audioSegmentFiles)
@@ -309,7 +309,7 @@ class SegmentedEncodeServiceTest {
                 outputFolder = outputFolder.absolutePath,
             )
 
-            val operations = service.prepareJoinSegment(encoreJob, workDir)
+            val operations = service.prepareJoinSegment(encoreJob, outputFolder, workDir)
 
             assertEquals(3, operations.size)
             assertOperationMatches(

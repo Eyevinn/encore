@@ -106,6 +106,7 @@ class EncoreService(
         val coroutineJob = Job()
         val cancelListener = CancellationListener(objectMapper, encoreJob.id, coroutineJob)
         var progressListener: SegmentProgressListener? = null
+        var outputFolder: String? = null
         try {
             startJob(encoreJob)
             val tasks = segmentedEncodeService.createTasks(encoreJob)
@@ -143,7 +144,10 @@ class EncoreService(
                     throw RuntimeException("Some segments failed")
                 }
                 log.info { "All segments completed" }
-                segmentedEncodeService.joinSegments(encoreJob, sharedWorkDir(encoreJob))
+                outputFolder = localEncodeService.outputFolder(encoreJob)
+                File(outputFolder).mkdirs()
+                val outputFiles = segmentedEncodeService.joinSegments(encoreJob, outputFolder!!, sharedWorkDir(encoreJob))
+                localEncodeService.localEncodedFilesToCorrectDir(outputFolder!!, outputFiles, encoreJob)
             }
             updateSuccessfulJob(encoreJob, timedOutput)
         } catch (e: CancellationException) {
@@ -167,12 +171,16 @@ class EncoreService(
             redisMessageListerenerContainer.removeMessageListener(cancelListener)
             progressListener?.let { redisMessageListerenerContainer.removeMessageListener(it) }
             callbackService.sendProgressCallback(encoreJob)
+            localEncodeService.cleanup(outputFolder, encoreJob)
         }
     }
 
     private fun encodeSegment(encoreJob: EncoreJob, task: Task) {
         val taskNo = task.taskNo
         try {
+            encoreJob.inputs.forEach { input ->
+                input.accessUri = remoteFileService.getAccessUri(input.uri)
+            }
             log.info { "Start encoding ${encoreJob.baseName} task $taskNo/${encoreJob.segmentedEncodingInfo?.numTasks} (${task.type})" }
             val encodingMode = when (task.type) {
                 TaskType.AUDIOFULL -> EncodingMode.AUDIO_ONLY

@@ -251,7 +251,7 @@ class SegmentedEncodeService(
         val audioSegmentFiles: List<File>? = null,
     )
 
-    fun prepareJoinSegment(encoreJob: EncoreJob, sharedWorkDir: File): Map<String, JoinSegmentOperation> {
+    fun prepareJoinSegment(encoreJob: EncoreJob, outputFolder: File, sharedWorkDir: File): Map<String, JoinSegmentOperation> {
         val segmentedEncodingInfo = encoreJob.segmentedEncodingInfoOrThrow()
         val audioEncodingMode = segmentedEncodingInfo.audioEncodingMode
 
@@ -279,8 +279,6 @@ class SegmentedEncodeService(
             emptyMap()
         }
 
-        val outputFolder = File(encoreJob.outputFolder)
-        outputFolder.mkdirs()
         val joinSegmentOperations = LinkedHashMap<String, JoinSegmentOperation>()
 
         // Handle video segments and determine corresponding audio
@@ -324,8 +322,8 @@ class SegmentedEncodeService(
         return joinSegmentOperations
     }
 
-    fun joinSegments(encoreJob: EncoreJob, sharedWorkDir: File): List<MediaFile> {
-        val joinSegmentOperations = prepareJoinSegment(encoreJob, sharedWorkDir)
+    fun joinSegments(encoreJob: EncoreJob, outputFolder: String, sharedWorkDir: File): List<MediaFile> {
+        val joinSegmentOperations = prepareJoinSegment(encoreJob, File(outputFolder), sharedWorkDir)
 
         return joinSegmentOperations.values.map { joinSegmentOperation ->
             joinSegments(encoreJob, sharedWorkDir, joinSegmentOperation)
