@@ -1,5 +1,5 @@
 # Release notes v0.2.11-4
-## Changes compared to previous eyevinn release (v0.2.11-2)
+## Changes compared to previous eyevinn release (v0.2.11-3)
 - Support for using s3 urls for input and output when using chunked encoding
 
 ## Changed compared to latest upstream release (v0.2.11)
