@@ -161,6 +161,8 @@ data class AudioInput(
     override val channelLayout: ChannelLayout? = null,
     override val seekTo: Double? = null,
     override val copyTs: Boolean = false,
+    @JsonIgnore
+    override var accessUri: String = uri,
 ) : AudioIn {
     override val analyzedAudio: MediaContainer
         @JsonIgnore
@@ -168,9 +170,6 @@ data class AudioInput(
 
     override val type: String
         get() = TYPE_AUDIO
-
-    @JsonIgnore
-    override var accessUri: String = uri
 
     override fun withSeekTo(seekTo: Double) = copy(seekTo = seekTo)
 
@@ -192,9 +191,9 @@ data class VideoInput(
     override val probeInterlaced: Boolean = true,
     override val seekTo: Double? = null,
     override val copyTs: Boolean = false,
-) : VideoIn {
     @JsonIgnore
-    override var accessUri: String = uri
+    override var accessUri: String = uri,
+) : VideoIn {
 
     override val analyzedVideo: VideoFile
         @JsonIgnore
@@ -227,10 +226,10 @@ data class AudioVideoInput(
     override val channelLayout: ChannelLayout? = null,
     override val seekTo: Double? = null,
     override val copyTs: Boolean = false,
+    @JsonIgnore
+    override var accessUri: String = uri,
 ) : VideoIn,
     AudioIn {
-    @JsonIgnore
-    override var accessUri: String = uri
 
     override val analyzedVideo: VideoFile
         @JsonIgnore

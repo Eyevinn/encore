@@ -27,7 +27,8 @@ import java.time.Duration
 class EncoreIntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIntegrationTestBase(wireMockRuntimeInfo) {
 
     @Test
-    fun jobIsSuccessfulSurround(@TempDir outputDir: File) {
+    fun jobIsSuccessfulSurround(@TempDir tempDir: File) {
+        val outputDir = tempDir.resolve("output")
         val createdJob = successfulTest(
             job(outputDir = outputDir, file = testFileSurround),
             defaultExpectedOutputFiles(outputDir, testFileSurround) +
@@ -40,7 +41,8 @@ class EncoreIntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreIn
     }
 
     @Test
-    fun jobIsSuccessfulSurroundSegmentedEncode(@TempDir outputDir: File) {
+    fun jobIsSuccessfulSurroundSegmentedEncode(@TempDir tempDir: File) {
+        val outputDir = tempDir.resolve("output")
         val job = job(outputDir = outputDir, file = testFileSurround).copy(
             profile = "separate-video-audio",
             segmentLength = 3.84,

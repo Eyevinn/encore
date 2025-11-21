@@ -61,7 +61,7 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
         }
     }
 
-    fun jobWiths3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
+    fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
         val filename = "test.mp4"
         val remoteInput = uploadInputfile(testFileSurround.file.absolutePath, filename)
 
@@ -84,7 +84,13 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
         assertThat(progressCalls.first())
             .hasStatus(Status.SUCCESSFUL)
 
-        val expectedFiles = (defaultExpectedOutputFileSuffixes() + listOf("SURROUND.mp4"))
+        val expectedFiles = (
+            defaultExpectedOutputFileSuffixes() + listOf(
+                "STEREO_DE.mp4",
+                "SURROUND.mp4",
+                "SURROUND_DE.mp4",
+            )
+            )
             .map { "output/${createdJob.baseName}_$it" }
 
         val actualFiles = s3Client.listObjectsV2 {
@@ -98,6 +104,50 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
         // expectedFiles.forEach { minioClient.statObject(StatObjectArgs.builder().bucket(outputBucket).`object`(it).build()) }
     }
 
+    fun jobWithS3InputAndOutputSegmentedEncodeIsSuccessful(@TempDir outputDir: File) {
+        val filename = "test.mp4"
+        val remoteInput = uploadInputfile(testFileSurround.file.absolutePath, filename)
+
+        val job = job(outputDir = outputDir, file = testFileSurround)
+            .copy(
+                outputFolder = "s3://$outputBucket/output/",
+                inputs = listOf(AudioVideoInput(uri = remoteInput)),
+                profile = "separate-video-audio",
+                segmentLength = 3.84,
+                priority = 100,
+            )
+
+        val createdJob = createAndAwaitJob(
+            job = job,
+            timeout = Durations.FIVE_MINUTES,
+        ) { it.status.isCompleted }
+
+        assertThat(createdJob).hasStatus(Status.SUCCESSFUL)
+
+        val expectedFiles = listOf(
+            "x264_3100.mp4",
+            "STEREO.mp4",
+            "STEREO_DE.mp4",
+            "SURROUND.mp4",
+            "SURROUND_DE.mp4",
+        ).map { "output/${createdJob.baseName}_$it" }
+
+        val actualFiles = s3Client.listObjectsV2 {
+            it.bucket(outputBucket)
+                .prefix("output/")
+        }
+            .get()
+            .contents()
+            .map { it.key() ?: "" }
+        assertThat(actualFiles).containsExactlyInAnyOrder(*expectedFiles.toTypedArray())
+
+        assertThat(createdJob.segmentedEncodingInfo)
+            .hasAudioEncodingMode(se.svt.oss.encore.model.AudioEncodingMode.ENCODE_WITH_VIDEO)
+            .hasNumSegments(3)
+            .hasNumAudioSegments(0)
+            .hasNumTasks(3)
+    }
+
     private fun uploadInputfile(localPath: String, key: String): String {
         s3Client.putObject({ it.bucket(inputBucket).key(key).build() }, Paths.get(localPath))
 
@@ -105,17 +155,22 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
     }
 
     @Nested
-    @ActiveProfiles(profiles = ["test-local", "test-s3"])
+    @ActiveProfiles(profiles = ["test", "test-s3"])
     @WireMockTest
     class StandardS3Access(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreS3IntegrationTest(wireMockRuntimeInfo) {
         @Test
-        fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
-            super.jobWiths3InputAndOutputIsSuccessful(outputDir)
+        override fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
+            super.jobWithS3InputAndOutputIsSuccessful(outputDir)
+        }
+
+        @Test
+        override fun jobWithS3InputAndOutputSegmentedEncodeIsSuccessful(@TempDir outputDir: File) {
+            super.jobWithS3InputAndOutputSegmentedEncodeIsSuccessful(outputDir)
         }
     }
 
     @Nested
-    @ActiveProfiles(profiles = ["test-local", "test-s3"])
+    @ActiveProfiles(profiles = ["test", "test-s3"])
     @TestPropertySource(
         properties = [
             "remote-files.s3.anonymous-access=true",
@@ -125,8 +180,13 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
     @WireMockTest
     class AnonymousS3Access(wireMockRuntimeInfo: WireMockRuntimeInfo) : EncoreS3IntegrationTest(wireMockRuntimeInfo) {
         @Test
-        fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
-            super.jobWiths3InputAndOutputIsSuccessful(outputDir)
+        override fun jobWithS3InputAndOutputIsSuccessful(@TempDir outputDir: File) {
+            super.jobWithS3InputAndOutputIsSuccessful(outputDir)
+        }
+
+        @Test
+        override fun jobWithS3InputAndOutputSegmentedEncodeIsSuccessful(@TempDir outputDir: File) {
+            super.jobWithS3InputAndOutputSegmentedEncodeIsSuccessful(outputDir)
         }
     }
 }
