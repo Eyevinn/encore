@@ -1,3 +1,19 @@
+# Release notes v0.2.11-5
+## Changes compared to previous eyevinn release (v0.2.11-4)
+- Bump `spring-boot-dependencies` version due to tomcat vulnerabilities
+
+## Changed compared to latest upstream release (v0.2.11)
+- Add support for segmented encoding of audio
+- Add support for setting profile param 'debug.keepSharedWorkDir' to keep working directory after encoding for debugging purposes
+- Add documentation for eyevinn encore fork
+- Fix regex for parsing progress now works for ffmpeg 8
+- Add support for encoding audio separately without segmenting when using segmented encoding
+- Audio mix presets can have separate location
+- Support for specifying custom filters for split,scale,crop,pad
+- Sanitize ffprobe input parameters
+- Support for input with mix of mono and multitrack audiostreams
+- Support s3 urls for input and output, including when using chunked encoding
+- Bump `spring-boot-dependencies` version due to tomcat vulnerabilities
 # Release notes v0.2.11-4
 ## Changes compared to previous eyevinn release (v0.2.11-3)
 - Support for using s3 urls for input and output when using chunked encoding
@@ -13,7 +29,6 @@
 - Sanitize ffprobe input parameters
 - Support for input with mix of mono and multitrack audiostreams
 - Support s3 urls for input and output, including when using chunked encoding
-
 
 # Release notes v0.2.11-3
 ## Changes compared to previous eyevinn release (v0.2.11-2)
