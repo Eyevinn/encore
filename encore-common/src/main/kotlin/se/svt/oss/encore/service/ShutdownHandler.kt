@@ -33,7 +33,8 @@ class ShutdownHandler : ApplicationListener<ContextClosedEvent> {
     override fun onApplicationEvent(event: ContextClosedEvent) {
         if (isShutDown()) {
             log.info { "Delaying application shutdown" }
-            Thread.sleep(6000)
+            // Must be long enough for ffmpeg kill (3s) + repostJob to Redis (~1s) + buffer
+            Thread.sleep(12000)
             log.info { "Continue application shutdown" }
         }
     }
