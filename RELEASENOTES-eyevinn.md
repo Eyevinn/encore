@@ -1,3 +1,7 @@
+# Release notes v0.2.11-6
+## Changes compared to previous eyevinn release (v0.2.11-5)
+- Bump `spring-boot-dependencies` version due to vulnerabilities
+
 # Release notes v0.2.11-5
 ## Changes compared to previous eyevinn release (v0.2.11-4)
 - Bump `spring-boot-dependencies` version due to tomcat vulnerabilities
