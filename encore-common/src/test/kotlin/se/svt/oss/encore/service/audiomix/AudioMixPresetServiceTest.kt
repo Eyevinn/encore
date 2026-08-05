@@ -1,6 +1,5 @@
 package se.svt.oss.encore.service.audiomix
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -8,19 +7,23 @@ import org.junit.jupiter.api.Test
 import org.springframework.core.io.ClassPathResource
 import se.svt.oss.encore.config.EncodingProperties
 import se.svt.oss.encore.config.EncoreProperties
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.dataformat.yaml.YAMLMapper
 import java.io.IOException
 
 class AudioMixPresetServiceTest {
 
     private lateinit var mixService: AudioMixPresetService
-    private val objectMapper = ObjectMapper().findAndRegisterModules()
+    private val jsonMapper = JsonMapper.builder().findAndAddModules().build()
+    private val yamlMapper = YAMLMapper.builder().findAndAddModules().build()
     private val encoreProperties =
         EncoreProperties(encoding = EncodingProperties(ClassPathResource("audiomixpreset/audio-mix-presets.yml")))
 
     @BeforeEach
     internal fun setUp() {
         mixService = AudioMixPresetService(
-            objectMapper,
+            jsonMapper,
+            yamlMapper,
             encoreProperties,
         )
     }
@@ -36,7 +39,8 @@ class AudioMixPresetServiceTest {
     @Test
     fun `nonexistent preset throws error`() {
         mixService = AudioMixPresetService(
-            objectMapper,
+            jsonMapper,
+            yamlMapper,
             encoreProperties.copy(
                 encoding = encoreProperties.encoding.copy(
                     audioMixPresetLocation = ClassPathResource(

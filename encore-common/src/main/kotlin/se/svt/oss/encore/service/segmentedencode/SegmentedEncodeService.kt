@@ -143,10 +143,12 @@ class SegmentedEncodeService(
                 log.warn { "Multiple audio sample rates detected (${audioSampleRates.joinToString()}), downgrading from ENCODE_SEPARATELY_SEGMENTED to ENCODE_SEPARATELY_FULL" }
                 AudioEncodingMode.ENCODE_SEPARATELY_FULL
             }
+
             requestedMode == AudioEncodingMode.ENCODE_SEPARATELY_SEGMENTED && hasNonAacAudioEncode -> {
                 log.warn { "Non-AAC audio encode detected, downgrading from ENCODE_SEPARATELY_SEGMENTED to ENCODE_SEPARATELY_FULL" }
                 AudioEncodingMode.ENCODE_SEPARATELY_FULL
             }
+
             else -> requestedMode
         }
     }
@@ -197,6 +199,7 @@ class SegmentedEncodeService(
                     )
                 }
             }
+
             AudioEncodingMode.ENCODE_SEPARATELY_FULL -> {
                 // One full audio task
                 tasks.add(
@@ -217,6 +220,7 @@ class SegmentedEncodeService(
                     )
                 }
             }
+
             AudioEncodingMode.ENCODE_SEPARATELY_SEGMENTED -> {
                 val numAudioSegments = segmentedEncodingInfo.numAudioSegments
                 // N audio segment tasks

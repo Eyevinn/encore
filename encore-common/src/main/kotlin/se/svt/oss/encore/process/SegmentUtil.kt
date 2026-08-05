@@ -14,10 +14,13 @@ fun EncoreJob.segmentDuration(segmentNumber: Int): Double {
     val numSegments = segmentedEncodingInfoOrThrow().numSegments
     return when {
         duration == null -> segmentLengthOrThrow()
+
         segmentNumber < numSegments - 1 -> segmentLengthOrThrow()
+
         segmentNumber == numSegments - 1 ->
             // This correctly handles the case where the duration is an exact multiple of the segment length
             duration!! - segmentLengthOrThrow() * (numSegments - 1)
+
         else -> throw IllegalArgumentException("segmentNumber $segmentNumber is out of range for job with $numSegments segments")
     }
 }

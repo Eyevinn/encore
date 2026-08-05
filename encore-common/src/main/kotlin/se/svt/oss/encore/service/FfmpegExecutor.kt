@@ -13,13 +13,18 @@ import se.svt.oss.encore.model.EncoreJob
 import se.svt.oss.encore.model.input.maxDuration
 import se.svt.oss.encore.model.mediafile.toParams
 import se.svt.oss.encore.model.output.Output
+import se.svt.oss.encore.model.output.PooledMetric
+import se.svt.oss.encore.model.output.VmafLog
 import se.svt.oss.encore.process.CommandBuilder
 import se.svt.oss.encore.process.createTempDir
 import se.svt.oss.encore.service.audiomix.AudioMixPresetService
 import se.svt.oss.encore.service.profile.ProfileService
 import se.svt.oss.mediaanalyzer.MediaAnalyzer
 import se.svt.oss.mediaanalyzer.file.MediaFile
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.readValue
 import java.io.File
+import java.util.Collections
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 import kotlin.math.round
@@ -53,6 +58,7 @@ class FfmpegExecutor(
     private val profileService: ProfileService,
     private val audioMixService: AudioMixPresetService,
     private val encoreProperties: EncoreProperties,
+    private val jsonMapper: JsonMapper,
 ) {
 
     private val logLevelRegex = Regex(".*\\[(?<level>debug|info|warning|error|fatal)].*")
@@ -64,7 +70,7 @@ class FfmpegExecutor(
         outputFolder: String,
         progressChannel: SendChannel<Int>?,
         encodingMode: EncodingMode = EncodingMode.AUDIO_AND_VIDEO,
-    ): List<MediaFile> {
+    ): Pair<List<MediaFile>, Map<String, Map<String, PooledMetric>>> {
         ShutdownHandler.checkShutdown()
         val profile = profileService.getProfile(encoreJob)
         val audioMixPresets = audioMixService.getAudioMixPresets()
@@ -80,7 +86,6 @@ class FfmpegExecutor(
         check(outputs.isNotEmpty()) {
             "No outputs to encode! Check your profile and inputs!"
         }
-
         check(outputs.distinctBy { it.id }.size == outputs.size) {
             "Profile ${encoreJob.profile} contains duplicate suffixes: ${outputs.map { it.id }}!"
         }
@@ -97,10 +102,13 @@ class FfmpegExecutor(
                 }
             }
             progressChannel?.close()
-            outputs.flatMap { out ->
+            val vmafMetrics = vmafMetrics(outputs, File(outputFolder))
+            log.debug { "Vmaf metrics: $vmafMetrics" }
+            val mediaFiles = outputs.flatMap { out ->
                 out.postProcessor.process(File(outputFolder))
                     .map { mediaAnalyzer.analyze(it.toString(), disableImageSequenceDetection = out.isImage) }
             }
+            mediaFiles to vmafMetrics
         } finally {
             workDir.deleteRecursively()
         }
@@ -108,6 +116,7 @@ class FfmpegExecutor(
 
     private fun adaptOutputToEncodingMode(output: Output, encodingMode: EncodingMode): Output? = when (encodingMode) {
         EncodingMode.AUDIO_AND_VIDEO -> output
+
         EncodingMode.VIDEO_ONLY ->
             if (output.video == null) {
                 null
@@ -122,6 +131,22 @@ class FfmpegExecutor(
                 output.copy(video = null)
             }
     }
+
+    private fun vmafMetrics(outputs: List<Output>, outputFolder: File): Map<String, Map<String, PooledMetric>> = outputs.asSequence()
+        .filter { it.video?.vmaf?.enabled == true }
+        .map { output -> output.output to outputFolder.resolve("${output.output}.vmaf.json") }
+        .filter { (_, vmafLog) -> vmafLog.exists() }
+        .associate { (video, vmafLog) -> video to parseVmafMetrics(vmafLog) }
+
+    private fun parseVmafMetrics(file: File): Map<String, PooledMetric> =
+        try {
+            jsonMapper.readValue<VmafLog>(file)
+                .pooledMetrics
+                .filterKeys { it in encoreProperties.encoding.includeQualityMetrics }
+        } catch (e: Exception) {
+            log.warn(e) { "Failed to parse VMAF metrics from file ${file.absolutePath}!" }
+            Collections.emptyMap()
+        }
 
     private fun runFfmpeg(
         command: List<String>,

@@ -12,9 +12,11 @@ fun Profile.hasAudioEncodes(): Boolean = this.encodes
         when (encode) {
             is VideoEncode ->
                 encode.audioEncode?.enabled == true || encode.audioEncodes.any { it.enabled }
+
             is AudioEncode,
             is SimpleAudioEncode,
             -> true
+
             else -> false
         }
     }

@@ -12,7 +12,7 @@ import org.testcontainers.utility.DockerImageName
 
 class S3StorageExtension : BeforeAllCallback {
     private val log = KotlinLogging.logger { }
-    override fun beforeAll(context: ExtensionContext?) {
+    override fun beforeAll(context: ExtensionContext) {
         if (!isDockerAvailable()) {
             log.warn { "Docker is not available! Make sure minio is available as configured by remote-files.s3.*" }
             return

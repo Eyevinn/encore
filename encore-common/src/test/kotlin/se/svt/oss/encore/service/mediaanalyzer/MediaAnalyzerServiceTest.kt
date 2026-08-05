@@ -4,13 +4,14 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import se.svt.oss.encore.config.EncoreProperties
 import se.svt.oss.mediaanalyzer.MediaAnalyzer
 import se.svt.oss.mediaanalyzer.file.MediaFile
 
 class MediaAnalyzerServiceTest {
     private val mediaAnalyzer = mockk<MediaAnalyzer>()
 
-    private val mediaAnalyzerService = MediaAnalyzerService(mediaAnalyzer)
+    private val mediaAnalyzerService = MediaAnalyzerService(mediaAnalyzer, EncoreProperties())
 
     @Test
     fun testAnalyze() {
