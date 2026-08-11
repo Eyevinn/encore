@@ -23,6 +23,7 @@ import se.svt.oss.encore.model.Status
 import se.svt.oss.encore.model.callback.JobProgress
 import se.svt.oss.encore.model.input.AudioVideoInput
 import software.amazon.awssdk.services.s3.S3AsyncClient
+import tools.jackson.module.kotlin.readValue
 import java.io.File
 import java.nio.file.Paths
 
@@ -80,7 +81,7 @@ abstract class EncoreS3IntegrationTest(wireMockRuntimeInfo: WireMockRuntimeInfo)
 
         val progressCalls = wireMockRuntimeInfo
             .wireMock
-            .serveEvents.map { objectMapper.readValue<JobProgress>(it.request.bodyAsString) }
+            .serveEvents.map { jsonMapper.readValue<JobProgress>(it.request.bodyAsString) }
         assertThat(progressCalls.first())
             .hasStatus(Status.SUCCESSFUL)
 

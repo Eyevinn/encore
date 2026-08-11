@@ -1,9 +1,10 @@
 # SVT Encore
+
 [![License](https://img.shields.io/badge/license-EUPL-brightgreen.svg)](https://eupl.eu/)
 [![REUSE status](https://api.reuse.software/badge/github.com/fsfe/reuse-tool)](https://api.reuse.software/info/github.com/fsfe/reuse-tool)
 
 
-<img align="center" width="30%" src="https://raw.githubusercontent.com/svt/encore-doc/main/src/img/svt_encore_logo.png">
+<img align="center" width="30%" src="docs/assets/encore_logo.png">
 
 &nbsp;
 &nbsp;
@@ -32,49 +33,29 @@ _Encore_ is not
 - A Video packager (see <<faq>>)
 - An GUI application
 
-_Built with_
+**Scalable video transcoding as a service, built on [FFmpeg](https://www.ffmpeg.org/) and [Spring Boot](https://spring.io/projects/spring-boot).**
 
-* Kotlin
-* Gradle
-* Spring Boot
-* FFmpeg
-* and many other great projects
+Encore wraps FFmpeg behind a REST API and queues transcoding jobs in Redis, distributing work across a horizontally scalable pool of workers. Jobs are defined by reusable YAML transcoding profiles, routed through priority queues so urgent work stays unblocked, and report progress via HTTP callbacks.
 
-## Documentation
+It targets advanced users integrating transcoding into automated pipelines — for example, as part of a VOD (Video On Demand) workflow. Encore has been in production at SVT since 2019 and open source since 2021.
 
-Comprehensive documentation for _Encore_ can (and should) be read:
+**Full documentation: [svt.github.io/encore](https://svt.github.io/encore/)**
 
-[Online](https://svt.github.io/encore-doc/)
+## Quickstart
 
-or downloaded from the:
-
-[GitHub Repository](https://github.com/svt/encore-doc)
-
-If you have a running instance, you can also view the
-
-**OpenAPI Endpoints**:
-
+```bash
+docker compose up
 ```
-http(s)://yourinstance/swagger-ui.html
 
-as json
+Starts Redis and `encore-web` using the bundled [`docker-compose.yml`](docker-compose.yml). See [Getting Started](https://svt.github.io/encore/getting-started/) for creating a profile and submitting your first job.
 
 http(s)://yourinstance/v3/api-docs/
 
-or as yaml
-
-http(s)://yourinstance/v3/api-docs.yaml
-```
-
-### Local development
-
-Please see the [online documentation](https://svt.github.io/encore-doc/#the-user-guide)
+See [CONTRIBUTING.md](CONTRIBUTING.md). Report bugs and request features via [GitHub Issues](https://github.com/svt/encore/issues).
 
 ## License
 
-Copyright 2020 Sveriges Television AB.
-
-Encore is licensed under the 
+Copyright 2020–2026 Sveriges Television AB. Licensed under [EUPL-1.2-or-later](LICENSE).
 
 [EUPL-1.2-or-later](LICENSE) license
 

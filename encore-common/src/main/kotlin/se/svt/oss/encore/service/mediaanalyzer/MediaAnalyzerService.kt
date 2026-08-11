@@ -7,9 +7,11 @@ package se.svt.oss.encore.service.mediaanalyzer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.stereotype.Service
+import se.svt.oss.encore.config.EncoreProperties
 import se.svt.oss.encore.model.input.AudioIn
 import se.svt.oss.encore.model.input.Input
 import se.svt.oss.encore.model.input.VideoIn
+import se.svt.oss.encore.model.input.protocol
 import se.svt.oss.encore.model.mediafile.selectAudioStream
 import se.svt.oss.encore.model.mediafile.selectVideoStream
 import se.svt.oss.encore.model.mediafile.trimAudio
@@ -54,7 +56,10 @@ private val log = KotlinLogging.logger {}
     DisplayMatrix::class,
     UnknownSideData::class,
 )
-class MediaAnalyzerService(private val mediaAnalyzer: MediaAnalyzer) {
+class MediaAnalyzerService(
+    private val mediaAnalyzer: MediaAnalyzer,
+    private val encoreProperties: EncoreProperties,
+) {
 
     val ffprobeValidParams = getValidFfprobeParams()
 
@@ -62,29 +67,32 @@ class MediaAnalyzerService(private val mediaAnalyzer: MediaAnalyzer) {
         log.debug { "Analyzing input $input" }
         val probeInterlaced = input is VideoIn && input.probeInterlaced
         val useFirstAudioStreams = (input as? AudioIn)?.channelLayout?.channels?.size
-        val ffprobeInputParams = LinkedHashMap(input.params.filterKeys { ffprobeValidParams.contains(it) })
-
+        val protocolInputParams = encoreProperties.encoding.protocolInputParams[input.protocol()].orEmpty()
+        val ffprobeParams = LinkedHashMap(protocolInputParams).apply { putAll(input.params) }
         input.analyzed = mediaAnalyzer.analyze(
             file = input.accessUri,
             probeInterlaced = probeInterlaced,
-            ffprobeInputParams = ffprobeInputParams,
-        )
-            .let {
-                val selectedVideoStream = (input as? VideoIn)?.videoStream
-                val selectedAudioStream = (input as? AudioIn)?.audioStream
-                when (it) {
-                    is VideoFile -> it.selectVideoStream(selectedVideoStream)
-                        .selectAudioStream(selectedAudioStream)
-                        .trimAudio(useFirstAudioStreams)
-                        .copy(file = input.uri)
-                    is AudioFile -> it.selectAudioStream(selectedAudioStream)
-                        .trimAudio(useFirstAudioStreams)
-                        .copy(file = input.uri)
-                    is ImageFile -> it.copy(file = input.uri)
-                    is SubtitleFile -> it.copy(file = input.uri)
-                    else -> it
-                }
+            ffprobeInputParams = ffprobeParams,
+        ).let {
+            val selectedVideoStream = (input as? VideoIn)?.videoStream
+            val selectedAudioStream = (input as? AudioIn)?.audioStream
+            when (it) {
+                is VideoFile -> it.selectVideoStream(selectedVideoStream)
+                    .selectAudioStream(selectedAudioStream)
+                    .trimAudio(useFirstAudioStreams)
+                    .copy(file = input.uri)
+
+                is AudioFile -> it.selectAudioStream(selectedAudioStream)
+                    .trimAudio(useFirstAudioStreams)
+                    .copy(file = input.uri)
+
+                is ImageFile -> it.copy(file = input.uri)
+
+                is SubtitleFile -> it.copy(file = input.uri)
+
+                else -> it
             }
+        }
     }
 
     fun analyze(
