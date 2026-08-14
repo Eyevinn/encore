@@ -1,3 +1,7 @@
+# Release notes v1.0.0-2
+## Changes compared to previous eyevinn release (v1.0.0-1)
+- Bump Spring Boot to 4.0.7 and pin embedded Tomcat to 11.0.24 due to Tomcat vulnerabilities
+
 # Release notes v0.2.11-6
 ## Changes compared to previous eyevinn release (v0.2.11-5)
 - Bump `spring-boot-dependencies` version due to vulnerabilities
