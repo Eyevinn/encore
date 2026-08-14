@@ -10,6 +10,17 @@ plugins {
 tasks.named<BootJar>("bootJar") {
     archiveClassifier.set("boot")
 }
+dependencyManagement {
+    // spring-boot-dependencies 4.0.7 pins tomcat 11.0.22; override for later CVE fixes (11.0.23/24)
+    overriddenByDependencies(false)
+    dependencies {
+        dependencySet("org.apache.tomcat.embed:11.0.24") {
+            entry("tomcat-embed-core")
+            entry("tomcat-embed-el")
+            entry("tomcat-embed-websocket")
+        }
+    }
+}
 graalvmNative {
     binaries {
         named("main") {
