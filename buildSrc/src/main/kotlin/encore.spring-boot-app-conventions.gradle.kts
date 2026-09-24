@@ -13,7 +13,11 @@ tasks.named<BootJar>("bootJar") {
 dependencyManagement {
     // spring-boot-dependencies 4.0.7 pins tomcat 11.0.22; override for later CVE fixes (11.0.23/24)
     overriddenByDependencies(false)
+    imports {
+        mavenBom("io.netty:netty-bom:4.2.17.Final")
+    }
     dependencies {
+        dependency("org.bouncycastle:bcprov-jdk18on:1.85")
         dependencySet("org.apache.tomcat.embed:11.0.24") {
             entry("tomcat-embed-core")
             entry("tomcat-embed-el")
