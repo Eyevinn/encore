@@ -1,3 +1,6 @@
+# Release notes v1.0.0-3
+## Changes compared to previous eyevinn release (v1.0.0-2)
+- pin netty to 4.2.17.Final and bcprov-jdk18on to 1.85 due to vulnerabilities
 # Release notes v1.0.0-2
 ## Changes compared to previous eyevinn release (v1.0.0-1)
 - Bump Spring Boot to 4.0.7 and pin embedded Tomcat to 11.0.24 due to Tomcat vulnerabilities
