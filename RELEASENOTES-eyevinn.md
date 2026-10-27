@@ -1,3 +1,7 @@
+# Release notes v1.0.0-4
+## Changes compared to previous eyevinn release (v1.0.0-3)
+- Enable S3 support in native worker images
+
 # Release notes v1.0.0-3
 ## Changes compared to previous eyevinn release (v1.0.0-2)
 - pin netty to 4.2.17.Final and bcprov-jdk18on to 1.85 due to vulnerabilities
