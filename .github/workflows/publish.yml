@@ -31,6 +31,7 @@ jobs:
         env:
           LC_ALL: C.UTF-8
           LANG: C.UTF-8
+          REMOTE_FILES_S3_ENABLED: "true"
           NATIVE_IMAGE_CONFIG_FILE: ${{ github.workspace }}/native-image.properties
         run: |
           echo 'NativeImageArgs = -J-Xmx14G' > $NATIVE_IMAGE_CONFIG_FILE
