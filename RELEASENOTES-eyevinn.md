@@ -1,3 +1,7 @@
+# Release notes v1.0.0-5
+## Changes compared to previous eyevinn release (v1.0.0-4)
+- Upgrade Spring Boot to 4.0.9, including the patched Hibernate Validator 9.0.2.Final, and use the BOM-managed embedded Tomcat version
+
 # Release notes v1.0.0-4
 ## Changes compared to previous eyevinn release (v1.0.0-3)
 - Enable S3 support in native worker images
