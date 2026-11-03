@@ -69,7 +69,7 @@ tasks.test {
 }
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.6")
+        mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.9")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.1.1")
     }
 }
