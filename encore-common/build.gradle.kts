@@ -24,7 +24,7 @@ dependencies {
     testImplementation("org.awaitility:awaitility")
     testImplementation("org.wiremock:wiremock-standalone:3.12.1")
     testImplementation("org.springframework.boot:spring-boot-starter-data-rest")
-    testFixturesImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.6"))
+    testFixturesImplementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.9"))
     testFixturesImplementation("com.redis:testcontainers-redis:2.2.4")
     testFixturesImplementation("io.github.oshai:kotlin-logging-jvm:7.0.14")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api")
